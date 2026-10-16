@@ -2,11 +2,12 @@ name: Weekly Premier League table
 
 on:
   schedule:
-    - cron: "0 14 * * 2"
-  workflow_dispatch:
+    - cron: "0 14 * * *"      # every day, 14:00 UTC (7 am Pacific); it only acts once a full matchweek is complete
+  workflow_dispatch:           # lets you run it by hand from the Actions tab
 
 permissions:
-  contents: write
+  contents: write              # needed to save the dated table file
+  actions: write               # needed to switch itself off after the final matchweek
 
 jobs:
   fetch:
@@ -21,7 +22,6 @@ jobs:
           pip install playwright==1.48.0
           playwright install --with-deps chromium
       - name: Fetch table
-        id: fetch
         run: python fetch_table.py
       - name: Save the dated table
         run: |
@@ -31,6 +31,7 @@ jobs:
           git diff --cached --quiet || git commit -m "Table for $(date -u +%F)"
           git push
       - name: Email the table
+        if: hashFiles('email.txt') != ''
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -38,3 +39,8 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
         run: python send_email.py email.txt "Premier League table - weekly"
+      - name: Switch off after the final matchweek
+        if: hashFiles('season_over.flag') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow disable "Weekly Premier League table" --repo "$GITHUB_REPOSITORY"
