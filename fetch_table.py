@@ -18,6 +18,10 @@ NAMES = {t.lower(): t for t in TEAMS}
 NAMES.update({k.lower(): v for k, v in ALIASES.items()})
 
 
+class MidRound(ValueError):
+    """Not all teams have played the same number of games yet."""
+
+
 def parse(text):
     """Return [(pos, team, played, pts)] in table order, or raise ValueError.
     Reads the page text line by line: a team-name line is followed by the numbers
@@ -50,7 +54,7 @@ def parse(text):
     if pts != sorted(pts, reverse=True):
         raise ValueError("Rows are not in points order")
     if len({r[1] for r in rows}) != 1:
-        raise ValueError("Teams have played different numbers of games; table may be mid-round")
+        raise MidRound("Teams have played different numbers of games; table may be mid-round")
     return [(n + 1, t, p, s) for n, (t, p, s) in enumerate(rows)]
 
 
@@ -80,6 +84,11 @@ if __name__ == "__main__":
     import glob, os
     try:
         rows = parse(open(sys.argv[1], encoding="utf-8").read() if len(sys.argv) > 1 else fetch_text())
+    except MidRound as e:
+        # A matchweek is still being played. This is normal, so finish quietly (no red failure, no email).
+        print("Matchweek still in progress, nothing to do:", e)
+        if os.path.exists("email.txt"): os.remove("email.txt")
+        sys.exit(0)
     except Exception as e:
         print("FAILED:", e); sys.exit(1)
     today = datetime.date.today().isoformat()
