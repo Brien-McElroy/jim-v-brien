@@ -102,6 +102,7 @@ if __name__ == "__main__":
         w = csv.writer(f); w.writerow(["position", "team", "played", "points"]); w.writerows(rows)
     body = ["Premier League 2026-27 table after Matchweek %d (fetched %s)." % (played, today),
             "Source: " + URL, "",
+            "Jim's results page (updates itself in a few minutes): https://brien-mcelroy.github.io/jim-v-brien/", "",
             "Paste the lines below into the Weekly update tab (name it Week %d):" % played, ""]
     body += ["%d. %s %d" % (pos, team, pts) for pos, team, _, pts in rows]
     if played >= 38:
