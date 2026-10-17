@@ -2,12 +2,14 @@ name: Weekly Premier League table
 
 on:
   schedule:
-    - cron: "0 14 * * *"      # every day, 14:00 UTC (7 am Pacific); it only acts once a full matchweek is complete
-  workflow_dispatch:           # lets you run it by hand from the Actions tab
+    - cron: "0 14 * * *"
+  workflow_dispatch:
 
 permissions:
-  contents: write              # needed to save the dated table file
-  actions: write               # needed to switch itself off after the final matchweek
+  contents: write
+  actions: write
+  pages: write
+  id-token: write
 
 jobs:
   fetch:
@@ -30,6 +32,12 @@ jobs:
           git add tables/
           git diff --cached --quiet || git commit -m "Table for $(date -u +%F)"
           git push
+      - name: Build Jim's page
+        run: python build_site.py
+      - name: Upload Jim's page
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
       - name: Email the table
         if: hashFiles('email.txt') != ''
         env:
@@ -44,3 +52,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow disable "Weekly Premier League table" --repo "$GITHUB_REPOSITORY"
+
+  deploy:
+    needs: fetch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
