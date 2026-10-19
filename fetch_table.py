@@ -59,25 +59,38 @@ def parse(text):
 
 
 def fetch_text():
-    with sync_playwright() as p:
-        b = p.chromium.launch()
-        pg = b.new_page(viewport={"width": 1400, "height": 2400})
-        pg.goto(URL, wait_until="networkidle", timeout=90000)
-        for sel in ("#onetrust-reject-all-handler", "#onetrust-accept-btn-handler"):
-            try:
-                pg.click(sel, timeout=3000); break
-            except Exception:
-                pass
-        pg.wait_for_timeout(4000)
-        # the default "Short" view lacks draws and losses; "Full" has every column
+    """Load the page, retrying up to 3 times. We wait for the table itself to appear
+    rather than for the whole page to go quiet, because the site keeps loading ads."""
+    import time
+    last = None
+    for attempt in range(3):
         try:
-            pg.get_by_text("Full", exact=True).first.click(timeout=5000)
-            pg.wait_for_timeout(2500)
-        except Exception:
-            pass
-        text = pg.inner_text("body")
-        b.close()
-    return text
+            with sync_playwright() as p:
+                b = p.chromium.launch()
+                try:
+                    pg = b.new_page(viewport={"width": 1400, "height": 2400})
+                    pg.goto(URL, wait_until="domcontentloaded", timeout=60000)
+                    for sel in ("#onetrust-reject-all-handler", "#onetrust-accept-btn-handler"):
+                        try:
+                            pg.click(sel, timeout=3000); break
+                        except Exception:
+                            pass
+                    pg.wait_for_selector("text=Arsenal", timeout=45000)
+                    pg.wait_for_timeout(4000)
+                    # the default "Short" view lacks draws and losses; "Full" has every column
+                    try:
+                        pg.get_by_text("Full", exact=True).first.click(timeout=5000)
+                        pg.wait_for_timeout(2500)
+                    except Exception:
+                        pass
+                    return pg.inner_text("body")
+                finally:
+                    b.close()
+        except Exception as e:
+            last = e
+            print("Attempt %d failed: %s" % (attempt + 1, str(e).splitlines()[0]))
+            time.sleep(10)
+    raise last
 
 
 if __name__ == "__main__":
