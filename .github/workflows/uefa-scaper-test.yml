@@ -1,6 +1,8 @@
 # A test you run by hand. It does not touch the Premier League job, does not
 # change any file in the repo, does not build a page and does not email anyone.
-# It only prints whether it managed to read the Champions League results.
+#
+# Version 3 reads UEFA's own data feed directly, so there is no browser to
+# install any more. The run takes seconds instead of seven minutes.
 name: UEFA scraper test
 
 on:
@@ -20,12 +22,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install the browser
-        run: |
-          python -m pip install --upgrade pip
-          pip install playwright==1.48.0
-          python -m playwright install --with-deps chromium
 
       - name: Try to read the results
         run: python UEFA_test_scraper.py "${{ inputs.matchday || '3' }}"
