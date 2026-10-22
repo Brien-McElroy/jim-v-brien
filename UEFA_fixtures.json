@@ -1,0 +1,888 @@
+{
+"played": {
+"1": [
+[
+"2026-09-08",
+"Club Brugge",
+"Aston Villa",
+2,
+3
+],
+[
+"2026-09-08",
+"AEK Athens",
+"LASK",
+1,
+0
+],
+[
+"2026-09-08",
+"Real Madrid",
+"Inter",
+2,
+1
+],
+[
+"2026-09-08",
+"B. Dortmund",
+"Villarreal",
+3,
+2
+],
+[
+"2026-09-08",
+"Porto",
+"Man City",
+0,
+2
+],
+[
+"2026-09-08",
+"Lille",
+"Real Betis",
+2,
+3
+],
+[
+"2026-09-09",
+"Barcelona",
+"Feyenoord",
+5,
+1
+],
+[
+"2026-09-09",
+"Stuttgart",
+"Viking",
+3,
+1
+],
+[
+"2026-09-09",
+"Paris",
+"S. Bratislava",
+6,
+1
+],
+[
+"2026-09-09",
+"Liverpool",
+"Atleti",
+2,
+1
+],
+[
+"2026-09-09",
+"Sporting CP",
+"Galatasaray",
+3,
+1
+],
+[
+"2026-09-09",
+"Napoli",
+"Arsenal",
+0,
+1
+],
+[
+"2026-09-10",
+"PSV",
+"Shakhtar",
+1,
+1
+],
+[
+"2026-09-10",
+"Fenerbahce",
+"Roma",
+1,
+1
+],
+[
+"2026-09-10",
+"Bayern Munchen",
+"Bodo/Glimt",
+5,
+0
+],
+[
+"2026-09-10",
+"Man Utd",
+"Sabah",
+4,
+0
+],
+[
+"2026-09-10",
+"Slavia Praha",
+"Lens",
+2,
+3
+],
+[
+"2026-09-10",
+"Como",
+"Leipzig",
+4,
+1
+]
+],
+"2": [
+[
+"2026-10-13",
+"Lens",
+"Sporting CP",
+0,
+2
+],
+[
+"2026-10-13",
+"Sabah",
+"Slavia Praha",
+2,
+0
+],
+[
+"2026-10-13",
+"Inter",
+"Club Brugge",
+3,
+4
+],
+[
+"2026-10-13",
+"Arsenal",
+"Lille",
+3,
+0
+],
+[
+"2026-10-13",
+"Atleti",
+"Man Utd",
+2,
+0
+],
+[
+"2026-10-13",
+"Leipzig",
+"PSV",
+1,
+0
+],
+[
+"2026-10-13",
+"Villarreal",
+"Napoli",
+3,
+1
+],
+[
+"2026-10-13",
+"Galatasaray",
+"Barcelona",
+1,
+4
+],
+[
+"2026-10-13",
+"Viking",
+"Bayern Munchen",
+3,
+3
+],
+[
+"2026-10-14",
+"Feyenoord",
+"Como",
+3,
+2
+],
+[
+"2026-10-14",
+"LASK",
+"Liverpool",
+3,
+6
+],
+[
+"2026-10-14",
+"Man City",
+"Paris",
+2,
+4
+],
+[
+"2026-10-14",
+"Roma",
+"Real Madrid",
+3,
+4
+],
+[
+"2026-10-14",
+"Aston Villa",
+"Fenerbahce",
+6,
+0
+],
+[
+"2026-10-14",
+"Real Betis",
+"Porto",
+3,
+2
+],
+[
+"2026-10-14",
+"Bodo/Glimt",
+"B. Dortmund",
+1,
+0
+],
+[
+"2026-10-14",
+"Shakhtar",
+"AEK Athens",
+3,
+1
+],
+[
+"2026-10-14",
+"S. Bratislava",
+"Stuttgart",
+0,
+3
+]
+],
+"3": [
+[
+"2026-10-20",
+"Fenerbahce",
+"Slavia Praha",
+2,
+2
+],
+[
+"2026-10-20",
+"Sabah",
+"B. Dortmund",
+1,
+2
+],
+[
+"2026-10-20",
+"Paris",
+"Barcelona",
+4,
+2
+],
+[
+"2026-10-20",
+"Liverpool",
+"Villarreal",
+4,
+3
+],
+[
+"2026-10-20",
+"Man City",
+"AEK Athens",
+5,
+1
+],
+[
+"2026-10-20",
+"Roma",
+"S. Bratislava",
+4,
+0
+],
+[
+"2026-10-20",
+"Porto",
+"PSV",
+0,
+1
+],
+[
+"2026-10-20",
+"Napoli",
+"Bodo/Glimt",
+4,
+3
+],
+[
+"2026-10-20",
+"Stuttgart",
+"Atleti",
+1,
+1
+],
+[
+"2026-10-21",
+"Lille",
+"Galatasaray",
+2,
+4
+],
+[
+"2026-10-21",
+"Como",
+"Man Utd",
+4,
+1
+],
+[
+"2026-10-21",
+"Bayern Munchen",
+"Arsenal",
+2,
+2
+],
+[
+"2026-10-21",
+"Real Madrid",
+"Leipzig",
+4,
+1
+],
+[
+"2026-10-21",
+"Inter",
+"Shakhtar",
+1,
+0
+],
+[
+"2026-10-21",
+"Sporting CP",
+"LASK",
+2,
+3
+],
+[
+"2026-10-21",
+"Aston Villa",
+"Viking",
+3,
+1
+],
+[
+"2026-10-21",
+"Club Brugge",
+"Lens",
+3,
+0
+],
+[
+"2026-10-21",
+"Real Betis",
+"Feyenoord",
+1,
+0
+]
+]
+},
+"future": {
+"4": [
+[
+"2026-11-03",
+"Shakhtar",
+"Sporting CP"
+],
+[
+"2026-11-03",
+"Galatasaray",
+"Stuttgart"
+],
+[
+"2026-11-03",
+"Barcelona",
+"Aston Villa"
+],
+[
+"2026-11-03",
+"Atleti",
+"Bayern Munchen"
+],
+[
+"2026-11-03",
+"Man Utd",
+"Roma"
+],
+[
+"2026-11-03",
+"Feyenoord",
+"Inter"
+],
+[
+"2026-11-03",
+"Bodo/Glimt",
+"Lille"
+],
+[
+"2026-11-03",
+"Villarreal",
+"Paris"
+],
+[
+"2026-11-03",
+"LASK",
+"S. Bratislava"
+],
+[
+"2026-11-04",
+"Fenerbahce",
+"Liverpool"
+],
+[
+"2026-11-04",
+"AEK Athens",
+"Real Madrid"
+],
+[
+"2026-11-04",
+"B. Dortmund",
+"Real Betis"
+],
+[
+"2026-11-04",
+"Porto",
+"Napoli"
+],
+[
+"2026-11-04",
+"PSV",
+"Club Brugge"
+],
+[
+"2026-11-04",
+"Leipzig",
+"Man City"
+],
+[
+"2026-11-04",
+"Slavia Praha",
+"Arsenal"
+],
+[
+"2026-11-04",
+"Lens",
+"Como"
+],
+[
+"2026-11-04",
+"Viking",
+"Sabah"
+]
+],
+"5": [
+[
+"2026-11-24",
+"Bodo/Glimt",
+"LASK"
+],
+[
+"2026-11-24",
+"Galatasaray",
+"Aston Villa"
+],
+[
+"2026-11-24",
+"Real Madrid",
+"PSV"
+],
+[
+"2026-11-24",
+"Man City",
+"Napoli"
+],
+[
+"2026-11-24",
+"Arsenal",
+"B. Dortmund"
+],
+[
+"2026-11-24",
+"Feyenoord",
+"Porto"
+],
+[
+"2026-11-24",
+"Leipzig",
+"Lens"
+],
+[
+"2026-11-24",
+"S. Bratislava",
+"Real Betis"
+],
+[
+"2026-11-24",
+"Como",
+"AEK Athens"
+],
+[
+"2026-11-25",
+"Slavia Praha",
+"Villarreal"
+],
+[
+"2026-11-25",
+"Sabah",
+"Barcelona"
+],
+[
+"2026-11-25",
+"Paris",
+"Roma"
+],
+[
+"2026-11-25",
+"Inter",
+"Stuttgart"
+],
+[
+"2026-11-25",
+"Atleti",
+"Viking"
+],
+[
+"2026-11-25",
+"Sporting CP",
+"Man Utd"
+],
+[
+"2026-11-25",
+"Club Brugge",
+"Liverpool"
+],
+[
+"2026-11-25",
+"Lille",
+"Bayern Munchen"
+],
+[
+"2026-11-25",
+"Shakhtar",
+"Fenerbahce"
+]
+],
+"6": [
+[
+"2026-12-08",
+"Villarreal",
+"Sabah"
+],
+[
+"2026-12-08",
+"Viking",
+"Feyenoord"
+],
+[
+"2026-12-08",
+"Bayern Munchen",
+"Slavia Praha"
+],
+[
+"2026-12-08",
+"Barcelona",
+"Man City"
+],
+[
+"2026-12-08",
+"Roma",
+"Sporting CP"
+],
+[
+"2026-12-08",
+"Aston Villa",
+"Paris"
+],
+[
+"2026-12-08",
+"Man Utd",
+"Leipzig"
+],
+[
+"2026-12-08",
+"Napoli",
+"Club Brugge"
+],
+[
+"2026-12-08",
+"AEK Athens",
+"Galatasaray"
+],
+[
+"2026-12-09",
+"Real Betis",
+"Como"
+],
+[
+"2026-12-09",
+"S. Bratislava",
+"Shakhtar"
+],
+[
+"2026-12-09",
+"Liverpool",
+"Porto"
+],
+[
+"2026-12-09",
+"Arsenal",
+"Real Madrid"
+],
+[
+"2026-12-09",
+"B. Dortmund",
+"Inter"
+],
+[
+"2026-12-09",
+"PSV",
+"Atleti"
+],
+[
+"2026-12-09",
+"Stuttgart",
+"Lille"
+],
+[
+"2026-12-09",
+"LASK",
+"Fenerbahce"
+],
+[
+"2026-12-09",
+"Lens",
+"Bodo/Glimt"
+]
+],
+"7": [
+[
+"2027-01-19",
+"Bodo/Glimt",
+"Atleti"
+],
+[
+"2027-01-19",
+"Galatasaray",
+"Feyenoord"
+],
+[
+"2027-01-19",
+"Real Madrid",
+"LASK"
+],
+[
+"2027-01-19",
+"Inter",
+"Liverpool"
+],
+[
+"2027-01-19",
+"Aston Villa",
+"B. Dortmund"
+],
+[
+"2027-01-19",
+"Porto",
+"Slavia Praha"
+],
+[
+"2027-01-19",
+"Lille",
+"S. Bratislava"
+],
+[
+"2027-01-19",
+"Stuttgart",
+"Club Brugge"
+],
+[
+"2027-01-19",
+"AEK Athens",
+"Roma"
+],
+[
+"2027-01-20",
+"Fenerbahce",
+"Villarreal"
+],
+[
+"2027-01-20",
+"Sabah",
+"Napoli"
+],
+[
+"2027-01-20",
+"Sporting CP",
+"Barcelona"
+],
+[
+"2027-01-20",
+"Man Utd",
+"Bayern Munchen"
+],
+[
+"2027-01-20",
+"Real Betis",
+"Arsenal"
+],
+[
+"2027-01-20",
+"Leipzig",
+"Shakhtar"
+],
+[
+"2027-01-20",
+"Como",
+"Paris"
+],
+[
+"2027-01-20",
+"Lens",
+"Man City"
+],
+[
+"2027-01-20",
+"Viking",
+"PSV"
+]
+],
+"8": [
+[
+"2027-01-27",
+"Paris",
+"Galatasaray"
+],
+[
+"2027-01-27",
+"Bayern Munchen",
+"Real Betis"
+],
+[
+"2027-01-27",
+"Liverpool",
+"Lens"
+],
+[
+"2027-01-27",
+"Man City",
+"Sporting CP"
+],
+[
+"2027-01-27",
+"Arsenal",
+"Sabah"
+],
+[
+"2027-01-27",
+"Barcelona",
+"Como"
+],
+[
+"2027-01-27",
+"Atleti",
+"Fenerbahce"
+],
+[
+"2027-01-27",
+"B. Dortmund",
+"AEK Athens"
+],
+[
+"2027-01-27",
+"Roma",
+"Lille"
+],
+[
+"2027-01-27",
+"Club Brugge",
+"Bodo/Glimt"
+],
+[
+"2027-01-27",
+"PSV",
+"Stuttgart"
+],
+[
+"2027-01-27",
+"Feyenoord",
+"Leipzig"
+],
+[
+"2027-01-27",
+"Napoli",
+"Viking"
+],
+[
+"2027-01-27",
+"Villarreal",
+"Man Utd"
+],
+[
+"2027-01-27",
+"Shakhtar",
+"Real Madrid"
+],
+[
+"2027-01-27",
+"Slavia Praha",
+"Aston Villa"
+],
+[
+"2027-01-27",
+"S. Bratislava",
+"Inter"
+],
+[
+"2027-01-27",
+"LASK",
+"Porto"
+]
+]
+},
+"teams": [
+"AEK Athens",
+"Arsenal",
+"Aston Villa",
+"Atleti",
+"B. Dortmund",
+"Barcelona",
+"Bayern Munchen",
+"Bodo/Glimt",
+"Club Brugge",
+"Como",
+"Fenerbahce",
+"Feyenoord",
+"Galatasaray",
+"Inter",
+"LASK",
+"Leipzig",
+"Lens",
+"Lille",
+"Liverpool",
+"Man City",
+"Man Utd",
+"Napoli",
+"PSV",
+"Paris",
+"Porto",
+"Real Betis",
+"Real Madrid",
+"Roma",
+"S. Bratislava",
+"Sabah",
+"Shakhtar",
+"Slavia Praha",
+"Sporting CP",
+"Stuttgart",
+"Viking",
+"Villarreal"
+]
+}
