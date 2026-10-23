@@ -75,31 +75,14 @@ def fetch_text():
                             pg.click(sel, timeout=3000); break
                         except Exception:
                             pass
-                    # Wait until the VISIBLE page text holds a readable table. (Waiting on the
-                    # word "Arsenal" fails: it also sits, hidden, in the site's club menu.)
-                    def readable():
-                        try:
-                            parse(pg.inner_text("body")); return True
-                        except MidRound:
-                            return True
-                        except ValueError:
-                            return False
-                    clicked = False
-                    for _ in range(30):
-                        if readable():
-                            break
-                        if not clicked:
-                            # the default "Short" view lacks draws and losses; "Full" has every column
-                            try:
-                                pg.get_by_text("Full", exact=True).first.click(timeout=3000)
-                                clicked = True
-                            except Exception:
-                                pass
-                        pg.wait_for_timeout(3000)
-                    else:
-                        t = pg.inner_text("body")
-                        print("Page text seen (first 800 chars):", t[:800].replace("\n", " | "))
-                        raise RuntimeError("Table never became readable on the page")
+                    pg.wait_for_selector("text=Arsenal", timeout=45000)
+                    pg.wait_for_timeout(4000)
+                    # the default "Short" view lacks draws and losses; "Full" has every column
+                    try:
+                        pg.get_by_text("Full", exact=True).first.click(timeout=5000)
+                        pg.wait_for_timeout(2500)
+                    except Exception:
+                        pass
                     return pg.inner_text("body")
                 finally:
                     b.close()

@@ -1,0 +1,694 @@
+<title>Brien v Jim Champions League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Deliberately dark and silver so it is never mistaken for the Premier League page. */
+:root{
+  --font-display:'Oswald','Arial Narrow',sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --bg:#070A12; --surface:#0E1424; --surface-2:#151D33; --surface-3:#1C2642;
+  --fg:#E9EFFA; --muted:#93A3C4; --line:#223052; --line-strong:#33446F;
+  --accent:#3DD6F5; --accent-ink:#04121A;
+  --brien:#3DD6F5; --jim:#FFC24B;
+  --good:#5BE49B; --bad:#FF7A8A; --gold:#FFD36E;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;margin:0;padding:18px 16px 64px;
+  background-image:radial-gradient(1px 1px at 20% 12%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 68% 7%,rgba(255,255,255,.25),transparent),radial-gradient(1.4px 1.4px at 84% 22%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 36% 30%,rgba(255,255,255,.18),transparent),radial-gradient(1px 1px at 9% 44%,rgba(255,255,255,.14),transparent);
+  background-repeat:no-repeat}
+.wrap{max-width:980px;margin-inline:auto;display:flex;flex-direction:column;gap:18px}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+h2{font-size:23px;font-weight:600;text-transform:uppercase;letter-spacing:.1em}
+h3{font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+#app{display:flex;flex-direction:column;gap:22px}
+.tab-body{display:flex;flex-direction:column;gap:26px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* masthead */
+.mast{display:flex;align-items:center;gap:clamp(12px,3vw,20px)}
+.ball{flex:none;width:clamp(46px,11vw,78px);height:auto}
+.mast-k{margin:0 0 3px;font:600 clamp(10px,2.4vw,12px) var(--font-body);letter-spacing:.34em;text-transform:uppercase;color:var(--accent)}
+h1.t{font-family:var(--font-display);font-size:clamp(32px,8.6vw,66px);line-height:.95;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+h1.t .v{color:var(--muted);font-weight:500}
+.mast-s{margin:7px 0 0;font:600 clamp(11px,2.7vw,14px) var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.rule{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--brien) 0 50%,var(--jim) 50% 100%);opacity:.9}
+.mw{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.mw b{font-family:var(--font-display);font-size:22px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line-strong);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{appearance:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:11px 13px;font:600 13px var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* scoreboard */
+.board{border:1px solid var(--line-strong);border-radius:16px;padding:20px 14px 22px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;background:linear-gradient(180deg,var(--surface-2),var(--surface))}
+.side{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;border-top:5px solid var(--c);padding-top:12px}
+.side.brien{--c:var(--brien)} .side.jim{--c:var(--jim)}
+.who{font-family:var(--font-display);font-weight:600;font-size:clamp(19px,5vw,27px);letter-spacing:.2em;text-transform:uppercase;color:var(--c)}
+.num{font-family:var(--font-display);font-weight:700;font-size:clamp(62px,19vw,122px);line-height:.9;font-variant-numeric:tabular-nums}
+.sub1{font-size:12.5px;color:var(--muted);text-align:center;line-height:1.35}
+.mid{font-family:var(--font-display);font-size:clamp(20px,6vw,30px);color:var(--muted);font-weight:500}
+.verdict{margin:0;font-size:clamp(16px,4vw,19px);font-weight:700}
+.pm{font-weight:800;font-variant-numeric:tabular-nums}
+.pm.up{color:var(--good)} .pm.down{color:var(--bad)} .pm.even{color:var(--muted)}
+.crown{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+
+/* tables */
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:7px 6px;border-bottom:1px solid var(--line)}
+th{font:700 11px var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td.tm{text-align:left;font-weight:600}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+tr.q1 td:first-child{box-shadow:inset 3px 0 var(--good)}
+tr.q2 td:first-child{box-shadow:inset 3px 0 var(--accent)}
+tr.q3 td:first-child{box-shadow:inset 3px 0 var(--bad)}
+.lead{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+.lead.brien{color:var(--brien)} .lead.jim{color:var(--jim)}
+
+/* picks */
+.mdblock{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.mdhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--surface-2);flex-wrap:wrap}
+.mdhead b{font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--muted)}
+.tag.open{color:var(--good);border-color:var(--good)}
+.tag.locked{color:var(--muted)}
+.tag.done{color:var(--accent);border-color:var(--accent)}
+.mlist{display:grid;gap:1px;background:var(--line);padding:1px}
+.m{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:1px;background:var(--line)}
+.pk{appearance:none;border:0;background:var(--surface);color:var(--fg);font:600 14px var(--font-body);padding:11px 10px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
+.pk:last-child{text-align:right;justify-content:flex-end}
+.pk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk[data-on="1"]{background:var(--surface-3);box-shadow:inset 0 0 0 2px var(--c,var(--accent))}
+.pk:disabled{cursor:default;opacity:.95}
+.vs{background:var(--surface);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;padding:0 8px;letter-spacing:.06em}
+.res{background:var(--surface);color:var(--fg);font:700 13px var(--font-body);display:flex;align-items:center;padding:0 9px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dot.b{background:var(--brien)} .dot.j{background:var(--jim)}
+.who2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;overflow:hidden}
+.seg button{appearance:none;background:none;border:0;color:var(--muted);font:700 12px var(--font-body);letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--c,var(--accent));color:#04121A}
+.seg.brien button[aria-pressed="true"]{background:var(--brien)}
+.seg.jim button[aria-pressed="true"]{background:var(--jim)}
+.btn{appearance:none;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--fg);font:600 13px var(--font-body);padding:9px 15px;border-radius:9px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+textarea,input[type=text],input[type=number]{width:100%;background:var(--surface-2);color:var(--fg);border:1px solid var(--line-strong);border-radius:9px;padding:10px;font:500 14px var(--font-body)}
+textarea{min-height:150px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.note{margin:0;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;background:var(--surface-2);font-size:13.5px}
+.note.warn{border-left-color:var(--gold)}
+ol.steps{margin:0;padding-left:22px;display:grid;gap:11px}
+ol.steps li{padding-left:3px}
+ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
+
+/* chart */
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.chart .ax{fill:var(--muted);font:500 11px var(--font-body)}
+.chart .ln{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.chart .ln.b{stroke:var(--brien)} .chart .ln.j{stroke:var(--jim)}
+.chart .dt{fill:var(--bg);stroke-width:2.5}
+.chart .dt.b{stroke:var(--brien)} .chart .dt.j{stroke:var(--jim)}
+.chart .dt.last.b{fill:var(--brien)} .chart .dt.last.j{fill:var(--jim)}
+.chart .en{font:700 12px var(--font-body)}
+.chart .en.b{fill:var(--brien)} .chart .en.j{fill:var(--jim)}
+
+/* bracket */
+.bk{display:grid;gap:10px}
+.tie{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:10px 12px;display:grid;gap:7px}
+.tie .lab{font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.tie .sides{display:grid;gap:5px}
+.pts{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:10px}
+
+@media (max-width:560px){
+  .board{grid-template-columns:1fr;gap:16px}
+  .mid{display:none}
+  .mlist{gap:10px;background:transparent;padding:0}
+  .m{grid-template-columns:1fr;gap:1px;border-radius:10px;overflow:hidden;background:var(--line);border:1px solid var(--line-strong)}
+  .pk{padding:9px 11px}
+  .pk:last-child{text-align:left;justify-content:flex-start}
+  .vs{display:none}
+  .res{padding:4px 11px;justify-content:flex-start;font-size:12px;color:var(--muted)}
+  th,td{padding:7px 4px}
+}
+</style>
+<div class="wrap">
+  <header class="stack" style="display:flex;flex-direction:column;gap:12px">
+    <div class="mast">
+      <svg class="ball" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" fill="none" stroke="#3DD6F5" stroke-width="2.5"/>
+        <g fill="#E9EFFA">
+          <path d="M32 9l3.1 6.3 7 1-5 4.9 1.2 6.9L32 24.8l-6.3 3.3 1.2-6.9-5-4.9 7-1z"/>
+          <path d="M55 32l-4.6 5.2.8 6.9-6.6-2.2-5.4 4.4.2-7-5.9-3.8 6.7-2 2-6.7 3.9 5.8z" opacity=".75"/>
+          <path d="M9 32l4.6 5.2-.8 6.9 6.6-2.2 5.4 4.4-.2-7 5.9-3.8-6.7-2-2-6.7L17.9 32z" opacity=".75"/>
+          <path d="M32 58l-5.3-4.4-6.7 1.6 2.6-6.4-3.7-5.8 6.9.6 4.6-5.2 1.6 6.8 6.4 2.6-6 3.5z" opacity=".45"/>
+        </g>
+      </svg>
+      <div class="mast-t">
+        <p class="mast-k">UEFA Champions League · 2026/27</p>
+        <h1 class="t">Brien <span class="v">v</span> Jim</h1>
+        <p class="mast-s" id="mastsub">League phase predictor</p>
+      </div>
+    </div>
+    <div class="rule"></div>
+    <div class="mw"><b id="mwlabel">&nbsp;</b><span class="muted small" id="mwdate"></span></div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist"></nav>
+  <main id="app"></main>
+</div>
+<!--STATIC-->
+<script>
+var FX={"played":{"1":[["2026-09-08","Club Brugge","Aston Villa",2,3],["2026-09-08","AEK Athens","LASK",1,0],["2026-09-08","Real Madrid","Inter",2,1],["2026-09-08","B. Dortmund","Villarreal",3,2],["2026-09-08","Porto","Man City",0,2],["2026-09-08","Lille","Real Betis",2,3],["2026-09-09","Barcelona","Feyenoord",5,1],["2026-09-09","Stuttgart","Viking",3,1],["2026-09-09","Paris","S. Bratislava",6,1],["2026-09-09","Liverpool","Atleti",2,1],["2026-09-09","Sporting CP","Galatasaray",3,1],["2026-09-09","Napoli","Arsenal",0,1],["2026-09-10","PSV","Shakhtar",1,1],["2026-09-10","Fenerbahce","Roma",1,1],["2026-09-10","Bayern Munchen","Bodo/Glimt",5,0],["2026-09-10","Man Utd","Sabah",4,0],["2026-09-10","Slavia Praha","Lens",2,3],["2026-09-10","Como","Leipzig",4,1]],"2":[["2026-10-13","Lens","Sporting CP",0,2],["2026-10-13","Sabah","Slavia Praha",2,0],["2026-10-13","Inter","Club Brugge",3,4],["2026-10-13","Arsenal","Lille",3,0],["2026-10-13","Atleti","Man Utd",2,0],["2026-10-13","Leipzig","PSV",1,0],["2026-10-13","Villarreal","Napoli",3,1],["2026-10-13","Galatasaray","Barcelona",1,4],["2026-10-13","Viking","Bayern Munchen",3,3],["2026-10-14","Feyenoord","Como",3,2],["2026-10-14","LASK","Liverpool",3,6],["2026-10-14","Man City","Paris",2,4],["2026-10-14","Roma","Real Madrid",3,4],["2026-10-14","Aston Villa","Fenerbahce",6,0],["2026-10-14","Real Betis","Porto",3,2],["2026-10-14","Bodo/Glimt","B. Dortmund",1,0],["2026-10-14","Shakhtar","AEK Athens",3,1],["2026-10-14","S. Bratislava","Stuttgart",0,3]],"3":[["2026-10-20","Fenerbahce","Slavia Praha",2,2],["2026-10-20","Sabah","B. Dortmund",1,2],["2026-10-20","Paris","Barcelona",4,2],["2026-10-20","Liverpool","Villarreal",4,3],["2026-10-20","Man City","AEK Athens",5,1],["2026-10-20","Roma","S. Bratislava",4,0],["2026-10-20","Porto","PSV",0,1],["2026-10-20","Napoli","Bodo/Glimt",4,3],["2026-10-20","Stuttgart","Atleti",1,1],["2026-10-21","Lille","Galatasaray",2,4],["2026-10-21","Como","Man Utd",4,1],["2026-10-21","Bayern Munchen","Arsenal",2,2],["2026-10-21","Real Madrid","Leipzig",4,1],["2026-10-21","Inter","Shakhtar",1,0],["2026-10-21","Sporting CP","LASK",2,3],["2026-10-21","Aston Villa","Viking",3,1],["2026-10-21","Club Brugge","Lens",3,0],["2026-10-21","Real Betis","Feyenoord",1,0]]},"future":{"4":[["2026-11-03","Shakhtar","Sporting CP"],["2026-11-03","Galatasaray","Stuttgart"],["2026-11-03","Barcelona","Aston Villa"],["2026-11-03","Atleti","Bayern Munchen"],["2026-11-03","Man Utd","Roma"],["2026-11-03","Feyenoord","Inter"],["2026-11-03","Bodo/Glimt","Lille"],["2026-11-03","Villarreal","Paris"],["2026-11-03","LASK","S. Bratislava"],["2026-11-04","Fenerbahce","Liverpool"],["2026-11-04","AEK Athens","Real Madrid"],["2026-11-04","B. Dortmund","Real Betis"],["2026-11-04","Porto","Napoli"],["2026-11-04","PSV","Club Brugge"],["2026-11-04","Leipzig","Man City"],["2026-11-04","Slavia Praha","Arsenal"],["2026-11-04","Lens","Como"],["2026-11-04","Viking","Sabah"]],"5":[["2026-11-24","Bodo/Glimt","LASK"],["2026-11-24","Galatasaray","Aston Villa"],["2026-11-24","Real Madrid","PSV"],["2026-11-24","Man City","Napoli"],["2026-11-24","Arsenal","B. Dortmund"],["2026-11-24","Feyenoord","Porto"],["2026-11-24","Leipzig","Lens"],["2026-11-24","S. Bratislava","Real Betis"],["2026-11-24","Como","AEK Athens"],["2026-11-25","Slavia Praha","Villarreal"],["2026-11-25","Sabah","Barcelona"],["2026-11-25","Paris","Roma"],["2026-11-25","Inter","Stuttgart"],["2026-11-25","Atleti","Viking"],["2026-11-25","Sporting CP","Man Utd"],["2026-11-25","Club Brugge","Liverpool"],["2026-11-25","Lille","Bayern Munchen"],["2026-11-25","Shakhtar","Fenerbahce"]],"6":[["2026-12-08","Villarreal","Sabah"],["2026-12-08","Viking","Feyenoord"],["2026-12-08","Bayern Munchen","Slavia Praha"],["2026-12-08","Barcelona","Man City"],["2026-12-08","Roma","Sporting CP"],["2026-12-08","Aston Villa","Paris"],["2026-12-08","Man Utd","Leipzig"],["2026-12-08","Napoli","Club Brugge"],["2026-12-08","AEK Athens","Galatasaray"],["2026-12-09","Real Betis","Como"],["2026-12-09","S. Bratislava","Shakhtar"],["2026-12-09","Liverpool","Porto"],["2026-12-09","Arsenal","Real Madrid"],["2026-12-09","B. Dortmund","Inter"],["2026-12-09","PSV","Atleti"],["2026-12-09","Stuttgart","Lille"],["2026-12-09","LASK","Fenerbahce"],["2026-12-09","Lens","Bodo/Glimt"]],"7":[["2027-01-19","Bodo/Glimt","Atleti"],["2027-01-19","Galatasaray","Feyenoord"],["2027-01-19","Real Madrid","LASK"],["2027-01-19","Inter","Liverpool"],["2027-01-19","Aston Villa","B. Dortmund"],["2027-01-19","Porto","Slavia Praha"],["2027-01-19","Lille","S. Bratislava"],["2027-01-19","Stuttgart","Club Brugge"],["2027-01-19","AEK Athens","Roma"],["2027-01-20","Fenerbahce","Villarreal"],["2027-01-20","Sabah","Napoli"],["2027-01-20","Sporting CP","Barcelona"],["2027-01-20","Man Utd","Bayern Munchen"],["2027-01-20","Real Betis","Arsenal"],["2027-01-20","Leipzig","Shakhtar"],["2027-01-20","Como","Paris"],["2027-01-20","Lens","Man City"],["2027-01-20","Viking","PSV"]],"8":[["2027-01-27","Paris","Galatasaray"],["2027-01-27","Bayern Munchen","Real Betis"],["2027-01-27","Liverpool","Lens"],["2027-01-27","Man City","Sporting CP"],["2027-01-27","Arsenal","Sabah"],["2027-01-27","Barcelona","Como"],["2027-01-27","Atleti","Fenerbahce"],["2027-01-27","B. Dortmund","AEK Athens"],["2027-01-27","Roma","Lille"],["2027-01-27","Club Brugge","Bodo/Glimt"],["2027-01-27","PSV","Stuttgart"],["2027-01-27","Feyenoord","Leipzig"],["2027-01-27","Napoli","Viking"],["2027-01-27","Villarreal","Man Utd"],["2027-01-27","Shakhtar","Real Madrid"],["2027-01-27","Slavia Praha","Aston Villa"],["2027-01-27","S. Bratislava","Inter"],["2027-01-27","LASK","Porto"]]}};
+/* ---------------------------------------------------------------
+   Brien v Jim - UEFA Champions League 2026/27 predictor
+   Scoring: pick a winner for every match from Matchday 4 on.
+     right winner  +2
+     match drawn   +1 (both players, as long as a pick was made)
+     wrong         0
+   Tie-break: add up the final league-phase goal difference of every
+   team you picked. Higher total wins.
+   The game ends after Matchday 8 and the higher score is crowned.
+   The bracket is an optional extra afterwards, scored on its own.
+----------------------------------------------------------------*/
+var NICE={"Fenerbahce":"Fenerbahçe","Bayern Munchen":"Bayern München","Bodo/Glimt":"Bodø/Glimt"};
+function nm(t){return NICE[t]||t}
+var MDS=[4,5,6,7,8], ALLMD=[1,2,3,4,5,6,7,8];
+var ROUNDS=[{k:"PO",n:"KO play-offs",c:8,p:2},{k:"R16",n:"Round of 16",c:8,p:4},
+            {k:"QF",n:"Quarter-finals",c:4,p:8},{k:"SF",n:"Semi-finals",c:2,p:16},
+            {k:"F",n:"Final",c:1,p:32}];
+var STATIC=!!window.STATIC_MODE;
+var S={picks:{brien:{},jim:{}},results:{},bracket:{setup:{},picks:{brien:{},jim:{}},winners:{}}};
+if(STATIC&&window.STATIC_DATA)S=window.STATIC_DATA;
+var DB=null, who="brien", tab="results", upMd=4;
+var TODAY=(window.STATIC_DATE?new Date(window.STATIC_DATE+"T12:00:00Z"):new Date());
+
+/* ---------- fixtures ---------- */
+function fixtures(md){
+  var raw=(md<=3?FX.played[md]:FX.future[md])||[];
+  return raw.map(function(r,i){return {i:i,date:r[0],h:r[1],a:r[2]}});
+}
+function mdDates(md){var f=fixtures(md),s={};f.forEach(function(m){s[m.date]=1});return Object.keys(s).sort()}
+function mdOpens(md){return mdDates(md)[0]}
+function fmtDate(iso){
+  var p=iso.split("-"),mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return (+p[2])+" "+mo[+p[1]-1]+" "+p[0];
+}
+function mdDateLabel(md){var d=mdDates(md);return d.length>1?fmtDate(d[0])+" – "+fmtDate(d[d.length-1]):fmtDate(d[0])}
+
+/* ---------- results ---------- */
+function resultsFor(md){
+  if(md<=3)return FX.played[md].map(function(r){return [r[3],r[4]]});
+  var r=S.results["md"+md];
+  return (r&&r.s&&r.s.length===18)?r.s:null;
+}
+function hasResults(md){return !!resultsFor(md)}
+function isOpen(md){ // picks still being accepted
+  if(hasResults(md))return false;
+  return TODAY<new Date(mdOpens(md)+"T00:00:00Z");
+}
+function lastDone(){var l=0;ALLMD.forEach(function(m){if(hasResults(m))l=m});return l}
+
+/* ---------- table ---------- */
+function standings(upto){
+  var t={};
+  ALLMD.forEach(function(md){
+    if(md>upto)return; var rs=resultsFor(md); if(!rs)return;
+    fixtures(md).forEach(function(m,i){
+      var hg=rs[i][0],ag=rs[i][1];
+      [m.h,m.a].forEach(function(x){if(!t[x])t[x]={t:x,P:0,W:0,D:0,L:0,GF:0,GA:0}});
+      var H=t[m.h],A=t[m.a];
+      H.P++;A.P++;H.GF+=hg;H.GA+=ag;A.GF+=ag;A.GA+=hg;
+      if(hg>ag){H.W++;A.L++}else if(ag>hg){A.W++;H.L++}else{H.D++;A.D++}
+    });
+  });
+  var rows=Object.keys(t).map(function(k){var r=t[k];r.GD=r.GF-r.GA;r.Pts=r.W*3+r.D;return r});
+  rows.sort(function(a,b){return b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||(a.t<b.t?-1:1)});
+  rows.forEach(function(r,i){r.pos=i+1});
+  return rows;
+}
+function gdMap(){var m={};standings(8).forEach(function(r){m[r.t]=r.GD});return m}
+
+/* ---------- picks + scoring ---------- */
+function pickOf(p,md,i){var a=S.picks[p]&&S.picks[p][md];return a?(a[i]||null):null}
+function setPick(p,md,i,v){
+  if(!S.picks[p])S.picks[p]={};
+  if(!S.picks[p][md])S.picks[p][md]=new Array(18).fill(null);
+  S.picks[p][md][i]=v;
+}
+function scoreMd(p,md){
+  var rs=resultsFor(md); if(!rs||md<4)return null;
+  var f=fixtures(md),pts=0,hit=0,miss=0,drew=0,made=0;
+  f.forEach(function(m,i){
+    var pk=pickOf(p,md,i); if(!pk)return; made++;
+    var hg=rs[i][0],ag=rs[i][1];
+    if(hg===ag){pts+=1;drew++}
+    else if((hg>ag&&pk==="H")||(ag>hg&&pk==="A")){pts+=2;hit++}
+    else miss++;
+  });
+  return {pts:pts,hit:hit,miss:miss,drew:drew,made:made};
+}
+function leagueTotal(p){
+  var t=0,hit=0,drew=0,miss=0;
+  MDS.forEach(function(md){var s=scoreMd(p,md);if(s){t+=s.pts;hit+=s.hit;drew+=s.drew;miss+=s.miss}});
+  return {pts:t,hit:hit,drew:drew,miss:miss};
+}
+function tieBreak(p){ // sum of final GD of every team picked
+  var g=gdMap(),sum=0,n=0;
+  MDS.forEach(function(md){
+    fixtures(md).forEach(function(m,i){
+      var pk=pickOf(p,md,i); if(!pk)return;
+      var t=pk==="H"?m.h:m.a; if(g[t]!==undefined){sum+=g[t];n++}
+    });
+  });
+  return {sum:sum,n:n};
+}
+function bracketTotal(p){
+  var t=0,hit=0,done=0;
+  ROUNDS.forEach(function(R){
+    var w=S.bracket.winners[R.k]||[],pk=(S.bracket.picks[p]||{})[R.k]||[];
+    for(var i=0;i<R.c;i++){
+      if(w[i]===undefined||w[i]===null)continue; done++;
+      if(pk[i]===w[i]){t+=R.p;hit++}
+    }
+  });
+  return {pts:t,hit:hit,done:done};
+}
+function grandTotal(p){return leagueTotal(p).pts}
+function seasonDone(){return hasResults(8)}
+
+function leaderInfo(){
+  var b=grandTotal("brien"),j=grandTotal("jim");
+  if(b!==j)return{who:b>j?"brien":"jim",by:Math.abs(b-j),tie:false,b:b,j:j};
+  var tb=tieBreak("brien").sum,tj=tieBreak("jim").sum;
+  if(tb!==tj)return{who:tb>tj?"brien":"jim",by:0,tie:true,b:b,j:j,gd:Math.abs(tb-tj)};
+  return{who:null,by:0,tie:true,b:b,j:j};
+}
+
+/* ---------- small helpers ---------- */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function cap(p){return p==="brien"?"Brien":"Jim"}
+function sgn(n){return (n>0?"+":"")+n}
+
+/* ---------- views ---------- */
+function resultsView(){
+  var L=leaderInfo(),done=lastDone(),h="";
+  var bl=leagueTotal("brien"),jl=leagueTotal("jim"),bb=bracketTotal("brien"),jb=bracketTotal("jim");
+  var started=done>=4;
+  h+='<div class="board">';
+  h+=sideHtml("brien",L,bl,bb);
+  h+='<div class="mid">v</div>';
+  h+=sideHtml("jim",L,jl,jb);
+  h+='</div>';
+  if(!started){
+    h+='<p class="note">No betting matchdays have been scored yet. Matchday 4 on '+esc(mdDateLabel(4))+' is the first one that counts.</p>';
+  }else{
+    var v;
+    if(seasonDone()){
+      h+='<section class="card" style="border-color:var(--gold);text-align:center">'+
+         '<div style="font-size:44px;line-height:1">♛</div>'+
+         '<h2 style="margin:6px 0 4px;color:var(--gold)">'+esc(L.who?(cap(L.who)+" takes the crown"):"A shared crown")+'</h2>'+
+         '<p class="muted small" style="margin:0">'+
+           esc(L.who?(cap(L.who)+" is the 2026/27 Champions League Predictor."+(L.tie?" Level on points, settled on goal difference.":"")) 
+                    :"All eight matchdays done and dead level.")+'</p>'+
+         '<p class="muted small" style="margin:10px 0 0">Played for fun. Want to carry on? The knockout bracket is on the Bracket tab, scored on its own.</p></section>';
+    }else{
+      if(L.who===null)v="Dead level.";
+      else if(L.tie)v=cap(L.who)+" leads on goal difference.";
+      else v=cap(L.who)+" leads by "+L.by+" point"+(L.by===1?"":"s")+".";
+      h+='<p class="verdict">'+esc(v)+'</p>';
+      h+='<p class="muted small" style="margin:-10px 0 0">Scored through Matchday '+done+'. Next: Matchday '+(done+1)+', '+esc(mdDateLabel(done+1))+'.</p>';
+    }
+  }
+  if(started){
+    h+='<section class="card"><h2 style="margin-bottom:12px">Matchday by matchday</h2><div class="scroll">'+mdTable()+'</div></section>';
+    h+='<section class="card"><h2 style="margin-bottom:6px">Running total</h2><p class="muted small" style="margin:0 0 10px">Points after each matchday.</p>'+chartHtml()+'</section>';
+  }
+  return h;
+}
+function sideHtml(p,L,lg,bk){
+  var tot=lg.pts,other=p==="brien"?grandTotal("jim"):grandTotal("brien");
+  var d=tot-other,cls=d>0?"up":d<0?"down":"even";
+  var h='<div class="side '+p+'">';
+  if(L.who===p&&seasonDone())h+='<span class="crown">♛ Champion</span>';
+  else if(L.who===p&&lastDone()>=4)h+='<span class="crown">★ Leading</span>';
+  else h+='<span class="crown" style="color:transparent">★</span>';
+  h+='<div class="who">'+cap(p)+'</div>';
+  h+='<div class="num">'+tot+'</div>';
+  var foe=p==="brien"?"Jim":"Brien";
+  var line=lastDone()<4?"not started":(d===0?("level with "+foe):('<span class="pm '+cls+'">'+sgn(d)+'</span> on '+foe));
+  h+='<div class="sub1">'+lg.hit+' winners called · '+lg.drew+' draws'+
+     (bk.done?('<br>bracket '+bk.pts+' (separate)'):'')+
+     '<br>'+line+'</div>';
+  h+='</div>';
+  return h;
+}
+function mdTable(){
+  var h='<table><thead><tr><th>Matchday</th><th>Leader</th><th>Brien pts</th><th>Jim pts</th><th>Brien total</th><th>Jim total</th></tr></thead><tbody>';
+  var cb=0,cj=0;
+  MDS.forEach(function(md){
+    var b=scoreMd("brien",md),j=scoreMd("jim",md); if(!b||!j)return;
+    cb+=b.pts;cj+=j.pts;
+    var ld=cb>cj?"brien":cj>cb?"jim":null;
+    h+='<tr><td class="tm">MD '+md+'</td><td class="tm">'+(ld?'<span class="lead '+ld+'">'+cap(ld)+'</span>':'<span class="muted">level</span>')+'</td>'+
+       '<td>'+b.pts+'</td><td>'+j.pts+'</td><td><b>'+cb+'</b></td><td><b>'+cj+'</b></td></tr>';
+  });
+  return h+'</tbody></table>';
+}
+function chartHtml(){
+  var pts=[],cb=0,cj=0;
+  MDS.forEach(function(md){var b=scoreMd("brien",md),j=scoreMd("jim",md);if(!b||!j)return;cb+=b.pts;cj+=j.pts;pts.push({md:md,b:cb,j:cj})});
+  if(pts.length<1)return"";
+  var W=720,H=250,L=40,R=52,T=18,B=34, max=Math.max(10,cb,cj);
+  var x=function(i){return L+(pts.length<2?(W-L-R)/2:i*(W-L-R)/(pts.length-1))};
+  var y=function(v){return T+(H-T-B)*(1-v/max)};
+  var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Running points">';
+  for(var g=0;g<=4;g++){var v=Math.round(max*g/4),yy=y(v);
+    s+='<line class="gl" x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'"/><text class="ax" x="'+(L-8)+'" y="'+(yy+4)+'" text-anchor="end">'+v+'</text>';}
+  pts.forEach(function(p,i){s+='<text class="ax" x="'+x(i)+'" y="'+(H-12)+'" text-anchor="middle">MD '+p.md+'</text>'});
+  ["b","j"].forEach(function(k){
+    var d=pts.map(function(p,i){return (i?"L":"M")+x(i)+" "+y(p[k])}).join(" ");
+    s+='<path class="ln '+k+'" d="'+d+'"/>';
+    pts.forEach(function(p,i){s+='<circle class="dt '+k+(i===pts.length-1?' last':'')+'" cx="'+x(i)+'" cy="'+y(p[k])+'" r="4.5"/>'});
+    var last=pts[pts.length-1];
+    s+='<text class="en '+k+'" x="'+(W-R+9)+'" y="'+(y(last[k])+4)+'">'+last[k]+'</text>';
+  });
+  s+='</svg><p class="muted small" style="margin:8px 0 0"><span style="color:var(--brien)">●</span> Brien &nbsp; <span style="color:var(--jim)">●</span> Jim</p>';
+  return s;
+}
+
+function picksView(){
+  var h='';
+  h+='<div class="row" style="justify-content:space-between">';
+  h+='<div class="who2"><span class="muted small">Entering picks for</span>'+
+     '<span class="seg '+who+'"><button data-who="brien" aria-pressed="'+(who==="brien")+'">Brien</button>'+
+     '<button data-who="jim" aria-pressed="'+(who==="jim")+'">Jim</button></span></div></div>';
+  h+='<p class="note">Tap the team you think will win. Every match needs a pick — there is no draw button. If the match ends level you both get 1 point. A matchday locks itself the day its first game kicks off.</p>';
+  MDS.forEach(function(md){
+    var open=isOpen(md),done=hasResults(md),f=fixtures(md),rs=resultsFor(md);
+    var filled=f.filter(function(m,i){return pickOf(who,md,i)}).length;
+    h+='<section class="mdblock"><div class="mdhead"><b>Matchday '+md+'</b>'+
+       '<span class="muted small">'+esc(mdDateLabel(md))+'</span>'+
+       '<span class="tag '+(done?"done":open?"open":"locked")+'">'+(done?"Scored":open?("Open · "+filled+"/18"):"Locked · "+filled+"/18")+'</span></div>';
+    h+='<div class="mlist">';
+    f.forEach(function(m,i){
+      var pk=pickOf(who,md,i),dis=open?"":" disabled";
+      var hw=rs?(rs[i][0]>rs[i][1]):null, aw=rs?(rs[i][1]>rs[i][0]):null;
+      h+='<div class="m">';
+      h+='<button class="pk" data-md="'+md+'" data-i="'+i+'" data-v="H" data-on="'+(pk==="H"?1:0)+'" style="--c:var(--'+who+')"'+dis+'>'+
+         '<span>'+esc(nm(m.h))+'</span>'+(rs&&hw?' <span class="pts">W</span>':'')+'</button>';
+      h+=rs?('<div class="res">'+rs[i][0]+'–'+rs[i][1]+'</div>'):'<div class="vs">v</div>';
+      h+='<button class="pk" data-md="'+md+'" data-i="'+i+'" data-v="A" data-on="'+(pk==="A"?1:0)+'" style="--c:var(--'+who+')"'+dis+'>'+
+         (rs&&aw?'<span class="pts">W</span> ':'')+'<span>'+esc(nm(m.a))+'</span></button>';
+      h+='</div>';
+    });
+    h+='</div></section>';
+  });
+  return h;
+}
+
+function tableView(){
+  var done=lastDone(),rows=standings(8);
+  var h='<p class="note">Live league-phase table, worked out from every result entered. Top 8 go straight to the Round of 16, 9–24 play the knockout play-off, 25–36 are out.</p>';
+  h+='<section class="card"><h2 style="margin-bottom:4px">After Matchday '+done+'</h2>'+
+     '<p class="muted small" style="margin:0 0 12px">Goal difference here is what settles a tied bet at the end.</p><div class="scroll"><table>'+
+     '<thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var c=r.pos<=8?"q1":r.pos<=24?"q2":"q3";
+    h+='<tr class="'+c+'"><td>'+r.pos+'</td><td class="tm">'+esc(nm(r.t))+'</td><td>'+r.P+'</td><td>'+r.W+'</td><td>'+r.D+'</td><td>'+r.L+'</td><td>'+r.GF+'</td><td>'+r.GA+'</td><td>'+sgn(r.GD)+'</td><td><b>'+r.Pts+'</b></td></tr>';
+  });
+  h+='</tbody></table></div></section>';
+  var tb=tieBreak("brien"),tj=tieBreak("jim");
+  if(tb.n||tj.n){
+    h+='<section class="card"><h2 style="margin-bottom:4px">Tie-break standing</h2>'+
+       '<p class="muted small" style="margin:0 0 10px">Goal difference of every team picked, added up. Only used if the points finish level.</p>'+
+       '<table><tbody><tr><td class="tm"><span class="lead brien">Brien</span></td><td>'+tb.n+' picks</td><td><b>'+sgn(tb.sum)+'</b></td></tr>'+
+       '<tr><td class="tm"><span class="lead jim">Jim</span></td><td>'+tj.n+' picks</td><td><b>'+sgn(tj.sum)+'</b></td></tr></tbody></table></section>';
+  }
+  return h;
+}
+
+function bracketView(){
+  var h='<p class="note"><b>Optional extra.</b> The bet ends at Matchday 8 — this is only here if we fancy carrying on afterwards. It is scored on its own and does <b>not</b> count towards the crown. Each correct tie is worth more than the last: play-off 2, Round of 16 4, quarter-final 8, semi-final 16, the final 32.</p>';
+  if(!STATIC){
+    h+='<div class="row" style="justify-content:space-between"><div class="who2"><span class="muted small">Picking for</span>'+
+       '<span class="seg '+who+'"><button data-who="brien" aria-pressed="'+(who==="brien")+'">Brien</button>'+
+       '<button data-who="jim" aria-pressed="'+(who==="jim")+'">Jim</button></span></div></div>';
+  }
+  var any=ROUNDS.some(function(R){return (S.bracket.setup[R.k]||[]).length});
+  if(!any)h+='<p class="note warn">Nothing to do here yet. The knockout draw is made after Matchday 8 (27 January 2027). If you both want to keep going, the ties get typed in under <b>Update</b> and this tab comes alive.</p>';
+  ROUNDS.forEach(function(R){
+    var ties=S.bracket.setup[R.k]||[],w=S.bracket.winners[R.k]||[];
+    h+='<section class="card"><h2 style="margin-bottom:4px">'+esc(R.n)+'</h2>'+
+       '<p class="muted small" style="margin:0 0 12px">'+R.c+' tie'+(R.c===1?'':'s')+' · '+R.p+' points each</p>';
+    if(!ties.length){h+='<p class="muted small" style="margin:0">Not drawn yet.</p></section>';return}
+    h+='<div class="grid2">';
+    ties.forEach(function(t,i){
+      h+='<div class="tie"><div class="lab">'+esc(R.n)+' '+(i+1)+'</div><div class="sides">';
+      [0,1].forEach(function(k){
+        var pkB=((S.bracket.picks.brien||{})[R.k]||[])[i],pkJ=((S.bracket.picks.jim||{})[R.k]||[])[i];
+        var mine=((S.bracket.picks[who]||{})[R.k]||[])[i];
+        var won=w[i]===k, lost=(w[i]!==undefined&&w[i]!==null&&w[i]!==k);
+        var marks=(pkB===k?'<span class="dot b" title="Brien"></span>':'')+(pkJ===k?'<span class="dot j" title="Jim"></span>':'');
+        h+='<button class="pk" data-bk="'+R.k+'" data-i="'+i+'" data-s="'+k+'" data-on="'+(mine===k?1:0)+'"'+
+           ' style="--c:var(--'+who+');border-radius:8px'+(lost?';opacity:.5':'')+'"'+(STATIC?' disabled':'')+'>'+
+           '<span>'+esc(nm(t[k]||"TBD"))+'</span>'+(won?' <span class="pts">✓</span>':'')+marks+'</button>';
+      });
+      h+='</div></div>';
+    });
+    h+='</div></section>';
+  });
+  var bb=bracketTotal("brien"),jb=bracketTotal("jim");
+  if(bb.done||jb.done){
+    h+='<section class="card"><h2 style="margin-bottom:10px">Bracket points</h2><table><tbody>'+
+       '<tr><td class="tm"><span class="lead brien">Brien</span></td><td>'+bb.hit+' ties right</td><td><b>'+bb.pts+'</b></td></tr>'+
+       '<tr><td class="tm"><span class="lead jim">Jim</span></td><td>'+jb.hit+' ties right</td><td><b>'+jb.pts+'</b></td></tr></tbody></table></section>';
+  }
+  return h;
+}
+
+function updateView(){
+  var f=fixtures(upMd),rs=resultsFor(upMd)||[];
+  var h='<p class="note">After a matchday finishes, put the 18 scores in here. Everything else — the table, both scores, the chart, the leader — works itself out.</p>';
+  h+='<section class="card"><div class="row" style="margin-bottom:12px"><span class="muted small">Matchday</span>';
+  MDS.forEach(function(md){h+='<button class="btn'+(md===upMd?" go":"")+'" data-up="'+md+'">'+md+'</button>'});
+  h+='</div>';
+  h+='<p class="muted small" style="margin:0 0 12px">'+esc(mdDateLabel(upMd))+'</p>';
+  h+='<div class="mlist" style="border-radius:10px;overflow:hidden">';
+  f.forEach(function(m,i){
+    var r=rs[i]||["",""];
+    h+='<div class="m" style="grid-template-columns:1fr 54px 54px 1fr">'+
+       '<div class="pk" style="cursor:default"><span>'+esc(nm(m.h))+'</span></div>'+
+       '<input type="number" min="0" max="19" data-sc="'+i+'" data-k="0" value="'+(r[0]===""?"":r[0])+'" style="border-radius:0;text-align:center;padding:8px 2px">'+
+       '<input type="number" min="0" max="19" data-sc="'+i+'" data-k="1" value="'+(r[1]===""?"":r[1])+'" style="border-radius:0;text-align:center;padding:8px 2px">'+
+       '<div class="pk" style="cursor:default;justify-content:flex-end;text-align:right"><span>'+esc(nm(m.a))+'</span></div></div>';
+  });
+  h+='</div>';
+  h+='<div class="row" style="margin-top:14px"><button class="btn go" id="saveres">Save Matchday '+upMd+'</button>'+
+     '<button class="btn" id="clearres">Clear</button><span class="muted small" id="savemsg"></span></div>';
+  h+='<details style="margin-top:14px"><summary class="muted small" style="cursor:pointer">Or paste the results as text</summary>'+
+     '<p class="muted small" style="margin:10px 0 6px">One match per line, any of: <code>Arsenal 2-1 Chelsea</code> or <code>Arsenal 2 Chelsea 1</code>.</p>'+
+     '<textarea id="pastebox" placeholder="Shakhtar 1-2 Sporting CP"></textarea>'+
+     '<div class="row" style="margin-top:9px"><button class="btn" id="parsebtn">Read the pasted scores</button><span class="muted small" id="parsemsg"></span></div></details>';
+  h+='</section>';
+  h+='<section class="card"><h2 style="margin-bottom:4px">Knockout draw</h2>'+
+     '<p class="muted small" style="margin:0 0 10px">Once a round is drawn, type its ties here, one per line, as <code>Team A v Team B</code>. To record a result, put a <code>*</code> next to the team that went through: <code>Arsenal* v Barcelona</code>.</p>';
+  ROUNDS.forEach(function(R){
+    var ties=S.bracket.setup[R.k]||[],w=S.bracket.winners[R.k]||[];
+    var txt=ties.map(function(t,i){return (t[0]||"")+(w[i]===0?"*":"")+" v "+(t[1]||"")+(w[i]===1?"*":"")}).join("\n");
+    h+='<h3 style="margin:14px 0 6px">'+esc(R.n)+' <span class="muted" style="font-weight:500;letter-spacing:0;text-transform:none">('+R.c+' tie'+(R.c===1?'':'s')+')</span></h3>'+
+       '<textarea data-bkset="'+R.k+'" style="min-height:'+(R.c>4?120:70)+'px">'+esc(txt)+'</textarea>';
+  });
+  h+='<div class="row" style="margin-top:12px"><button class="btn go" id="savebk">Save the draw</button><span class="muted small" id="bkmsg"></span></div></section>';
+  h+='<section class="card"><h2 style="margin-bottom:4px">Send to Jim’s page</h2>'+
+     '<p class="muted small" style="margin:0 0 10px">Copy this and replace the whole contents of <code>UEFA_state.json</code> in GitHub. That is what builds Jim’s page and his email.</p>'+
+     '<textarea id="exportbox" readonly style="min-height:110px">'+esc(JSON.stringify({picks:S.picks,results:S.results,bracket:S.bracket}))+'</textarea>'+
+     '<div class="row" style="margin-top:9px"><button class="btn go" id="copyexp">Copy it</button><span class="muted small" id="expmsg"></span></div></section>';
+  return h;
+}
+
+function rulesView(){
+  var h='<section class="card"><h2 style="margin-bottom:12px">How to play</h2><ol class="steps">';
+  h+='<li>Brien and Jim each pick a winner for every match from <b>Matchday 4</b> onwards — 90 matches in all. Matchdays 1 to 3 were already played before the bet started, so they do not count.</li>';
+  h+='<li>There is no draw button. You back one team or the other in every match.</li>';
+  h+='<li><b>How a match scores.</b><ul class="plain">'+
+     '<li><b>+2</b> if the team you picked wins.</li>'+
+     '<li><b>+1</b> if the match is a draw. Nobody called it, so you both get a point.</li>'+
+     '<li><b>0</b> if the team you picked loses.</li></ul>'+
+     'The most anyone can take from one matchday is 36 (all 18 right), and from the whole league phase 180.</li>';
+  h+='<li>A matchday locks the day its first game kicks off. After the games, Brien enters the 18 scores and everything re-scores itself.</li>';
+  h+='<li><b>Tie-break.</b> If the points finish level, add up the final goal difference of every team you picked across all 90 matches. The higher total wins. That is why the GD column on the Table tab matters.</li>';
+  h+='<li><b>The game ends after Matchday 8</b>, on 27 January 2027. Highest score is crowned <b>Champions League Predictor</b>. If the points are level the goal-difference tie-break settles it; level on that too and the crown is shared.</li>';
+  h+='<li>This one is <b>just for fun</b> — no bottle of red riding on it.</li>';
+  h+='<li><b>Carrying on is optional.</b> If we both fancy it, the knockout bracket on the Bracket tab runs from February to the final on 4/5 June 2027: play-off <b>2</b>, Round of 16 <b>4</b>, quarter-final <b>8</b>, semi-final <b>16</b>, the final <b>32</b>. It is scored on its own and has nothing to do with the crown.</li>';
+  h+='</ol></section>';
+  h+='<section class="card"><h2 style="margin-bottom:10px">A worked example</h2>'+
+     '<p style="margin:0 0 10px">Matchday 4, the match <b>Atleti v Bayern München</b>:</p><ul class="plain">'+
+     '<li>Brien picks Atleti, Jim picks Bayern.</li>'+
+     '<li>Bayern win 2–0. Jim takes <b>2</b>, Brien takes <b>0</b>.</li>'+
+     '<li>Had it finished 1–1, they would take <b>1</b> each.</li></ul>'+
+     '<p style="margin:12px 0 0">Do that 18 times for a matchday and 90 times for the league phase, and the running total is what you see on the Results tab.</p></section>';
+  h+='<section class="card"><h2 style="margin-bottom:10px">The season</h2><div class="scroll"><table><thead><tr><th>Round</th><th>When</th><th>Counts towards the crown?</th></tr></thead><tbody>';
+  [[1,"8–10 Sep 2026","no"],[2,"13–14 Oct 2026","no"],[3,"20–21 Oct 2026","no"]].forEach(function(r){
+    h+='<tr><td class="tm">Matchday '+r[0]+'</td><td class="tm">'+r[1]+'</td><td class="muted">'+r[2]+'</td></tr>'});
+  MDS.forEach(function(md){h+='<tr><td class="tm">Matchday '+md+'</td><td class="tm">'+esc(mdDateLabel(md))+'</td><td><b>yes</b></td></tr>'});
+  h+='<tr><td class="tm" colspan="3" style="color:var(--gold);font-weight:700">♛ Champion crowned after Matchday 8</td></tr>';
+  [["KO play-offs","15–24 Feb 2027","2 each"],["Round of 16","8–17 Mar 2027","4 each"],
+   ["Quarter-finals","5–14 Apr 2027","8 each"],["Semi-finals","26 Apr – 5 May 2027","16 each"],
+   ["Final","4/5 Jun 2027","32"]].forEach(function(r){
+    h+='<tr><td class="tm">'+r[0]+'</td><td class="tm">'+r[1]+'</td><td class="muted">optional, '+r[2]+'</td></tr>'});
+  h+='</tbody></table></div></section>';
+  return h;
+}
+
+/* ---------- shell ---------- */
+var TABS=STATIC
+ ?[["results","Results"],["table","Table"],["rules","Rules"],["bracket","Bracket · optional"]]
+ :[["results","Results"],["picks","Picks"],["table","Table"],["update","Update"],["rules","Rules"],["bracket","Bracket · optional"]];
+
+function render(){
+  var tb=document.getElementById("tabs");
+  tb.innerHTML=TABS.map(function(t){return '<button role="tab" data-tab="'+t[0]+'" aria-selected="'+(tab===t[0])+'">'+t[1]+'</button>'}).join("");
+  var done=lastDone(),nx=0;MDS.forEach(function(m){if(!nx&&!hasResults(m))nx=m});
+  document.getElementById("mwlabel").textContent=done>=4?("Matchday "+done):"Matchday 4 next";
+  document.getElementById("mwdate").textContent=done>=4
+    ? ("scored · "+(nx?("Matchday "+nx+" on "+mdDateLabel(nx)):"that is the lot — champion crowned"))
+    : ("picks close "+fmtDate(mdOpens(4)));
+  document.getElementById("mastsub").textContent=(seasonDone()?"Matchdays 4-8 · complete":"Matchdays 4-8 · for fun")+(STATIC?" · read only":"");
+  var v={results:resultsView,picks:picksView,table:tableView,bracket:bracketView,update:updateView,rules:rulesView}[tab];
+  document.getElementById("app").className="tab-body";
+  document.getElementById("app").innerHTML=v?v():"";
+}
+
+/* ---------- persistence ---------- */
+function savePicks(p){
+  if(!DB)return;
+  DB.collection("picks").doc(p).set({md:S.picks[p]||{}}).catch(function(){});
+}
+function saveResults(md){
+  if(!DB)return Promise.resolve();
+  return DB.collection("results").doc("md"+md).set(S.results["md"+md]||{s:[]});
+}
+function saveBracket(){
+  if(!DB)return Promise.resolve();
+  return DB.collection("bracket").doc("state").set(S.bracket);
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",function(e){
+  var t=e.target.closest("button"); if(!t)return;
+  if(t.dataset.tab){tab=t.dataset.tab;render();window.scrollTo(0,0);return}
+  if(t.dataset.who){who=t.dataset.who;render();return}
+  if(t.dataset.up){upMd=+t.dataset.up;render();return}
+  if(t.dataset.v&&t.dataset.md){
+    var md=+t.dataset.md,i=+t.dataset.i;
+    if(!isOpen(md))return;
+    setPick(who,md,i,pickOf(who,md,i)===t.dataset.v?null:t.dataset.v);
+    savePicks(who);render();return;
+  }
+  if(t.dataset.bk){
+    var k=t.dataset.bk,ix=+t.dataset.i,sd=+t.dataset.s;
+    if(!S.bracket.picks[who])S.bracket.picks[who]={};
+    if(!S.bracket.picks[who][k])S.bracket.picks[who][k]=[];
+    var cur=S.bracket.picks[who][k][ix];
+    S.bracket.picks[who][k][ix]=(cur===sd?null:sd);
+    saveBracket();render();return;
+  }
+  if(t.id==="saveres"){
+    var f=fixtures(upMd),out=[],bad=0;
+    f.forEach(function(m,i){
+      var a=document.querySelector('[data-sc="'+i+'"][data-k="0"]').value,
+          b=document.querySelector('[data-sc="'+i+'"][data-k="1"]').value;
+      if(a===""||b==="")bad++; out.push([+a||0,+b||0]);
+    });
+    var msg=document.getElementById("savemsg");
+    if(bad){msg.textContent=bad+" match"+(bad===1?"":"es")+" still blank — fill them all in first.";msg.style.color="var(--bad)";return}
+    S.results["md"+upMd]={s:out,at:new Date().toISOString().slice(0,10)};
+    saveResults(upMd).then(function(){msg.textContent="Saved.";msg.style.color="var(--good)";render()})
+      .catch(function(){msg.textContent="Saved on this device only.";msg.style.color="var(--gold)";render()});
+    return;
+  }
+  if(t.id==="copyexp"){
+    var box=document.getElementById("exportbox"),em=document.getElementById("expmsg");
+    box.select();
+    var ok=false; try{ok=document.execCommand("copy")}catch(e){}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(box.value).then(function(){em.textContent="Copied.";em.style.color="var(--good)"},function(){});}
+    em.textContent=ok?"Copied.":"Selected — press Ctrl+C (or Cmd+C).";em.style.color=ok?"var(--good)":"var(--gold)";
+    return;
+  }
+  if(t.id==="clearres"){delete S.results["md"+upMd];saveResults(upMd);render();return}
+  if(t.id==="parsebtn"){
+    var txt=document.getElementById("pastebox").value,f2=fixtures(upMd),got=0;
+    var lines=txt.split("\n"),out2=f2.map(function(){return null});
+    lines.forEach(function(ln){
+      var m=ln.match(/^\s*(.+?)\s+(\d+)\s*[-–:]\s*(\d+)\s+(.+?)\s*$/)||ln.match(/^\s*(.+?)\s+(\d+)\s+(.+?)\s+(\d+)\s*$/);
+      if(!m)return;
+      var h1,g1,g2,a1;
+      if(/[-–:]/.test(ln.replace(/^[^0-9]*/,"").slice(0,6))||ln.match(/\d+\s*[-–:]\s*\d+/)){h1=m[1];g1=+m[2];g2=+m[3];a1=m[4]}
+      else{h1=m[1];g1=+m[2];a1=m[3];g2=+m[4]}
+      var key=function(s){return s.toLowerCase().replace(/[^a-z]/g,"")};
+      f2.forEach(function(fx,i){
+        if(key(nm(fx.h)).indexOf(key(h1))>=0||key(h1).indexOf(key(nm(fx.h)))>=0){
+          if(key(nm(fx.a)).indexOf(key(a1))>=0||key(a1).indexOf(key(nm(fx.a)))>=0){out2[i]=[g1,g2];got++}
+        }
+      });
+    });
+    var pm=document.getElementById("parsemsg");
+    if(got===18){S.results["md"+upMd]={s:out2,at:new Date().toISOString().slice(0,10)};saveResults(upMd);render()}
+    else{pm.textContent="Matched "+got+" of 18 lines. Check the team names.";pm.style.color="var(--gold)"}
+    return;
+  }
+  if(t.id==="savebk"){
+    ROUNDS.forEach(function(R){
+      var raw=document.querySelector('[data-bkset="'+R.k+'"]').value;
+      var ties=[],wins=[];
+      raw.split("\n").forEach(function(ln){
+        if(!ln.trim())return;
+        var p=ln.split(/\s+v\.?s?\.?\s+/i); if(p.length<2)return;
+        var A=p[0].trim(),B=p[1].trim(),w=null;
+        if(/\*\s*$/.test(A)){w=0;A=A.replace(/\*\s*$/,"").trim()}
+        if(/\*\s*$/.test(B)){w=1;B=B.replace(/\*\s*$/,"").trim()}
+        ties.push([A,B]);wins.push(w);
+      });
+      S.bracket.setup[R.k]=ties.slice(0,R.c);
+      S.bracket.winners[R.k]=wins.slice(0,R.c);
+    });
+    var bm=document.getElementById("bkmsg");
+    saveBracket().then(function(){bm.textContent="Saved.";bm.style.color="var(--good)";render()})
+      .catch(function(){bm.textContent="Saved on this device only.";bm.style.color="var(--gold)";render()});
+    return;
+  }
+});
+
+/* ---------- boot ---------- */
+render();
+if(!STATIC&&window.claude&&claude.use){
+  claude.use("db").then(function(db){
+    if(!db)return; DB=db;
+    return Promise.all([
+      db.collection("picks").doc("brien").get().catch(function(){return null}),
+      db.collection("picks").doc("jim").get().catch(function(){return null}),
+      db.collection("bracket").doc("state").get().catch(function(){return null})
+    ].concat(MDS.map(function(md){return db.collection("results").doc("md"+md).get().catch(function(){return null})})))
+    .then(function(r){
+      if(r[0]&&r[0].md)S.picks.brien=r[0].md;
+      if(r[1]&&r[1].md)S.picks.jim=r[1].md;
+      if(r[2]&&r[2].setup)S.bracket=r[2];
+      MDS.forEach(function(md,k){var d=r[3+k];if(d&&d.s&&d.s.length===18)S.results["md"+md]=d});
+      render();
+    });
+  }).catch(function(){});
+}
+
+</script>
