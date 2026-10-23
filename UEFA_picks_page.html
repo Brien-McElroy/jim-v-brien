@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Make your picks - Brien v Jim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --font-display:'Oswald','Arial Narrow',sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --bg:#070A12; --surface:#0E1424; --surface-2:#151D33; --surface-3:#1C2642;
+  --fg:#E9EFFA; --muted:#93A3C4; --line:#223052; --line-strong:#33446F;
+  --accent:#3DD6F5; --jim:#FFC24B; --good:#5BE49B; --gold:#FFD36E;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.5;
+  margin:0;padding:18px 16px 140px}
+.wrap{max-width:620px;margin-inline:auto;display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--font-display);font-size:clamp(28px,8vw,44px);line-height:1;font-weight:700;
+  text-transform:uppercase;letter-spacing:.02em;margin:0}
+h1 .v{color:var(--muted);font-weight:500}
+.k{margin:0 0 4px;font:600 11px var(--font-body);letter-spacing:.3em;text-transform:uppercase;color:var(--jim)}
+.rule{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--accent) 0 50%,var(--jim) 50%)}
+.note{margin:0;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--jim);
+  border-radius:8px;background:var(--surface-2);font-size:14.5px}
+.mdpick{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mdpick button{appearance:none;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--fg);
+  font:700 14px var(--font-body);padding:9px 16px;border-radius:9px;cursor:pointer}
+.mdpick button[aria-pressed="true"]{background:var(--jim);color:#120B00;border-color:var(--jim)}
+.m{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line);border:1px solid var(--line-strong);
+  border-radius:11px;overflow:hidden;margin-bottom:11px}
+.pk{appearance:none;border:0;background:var(--surface);color:var(--fg);font:600 16px var(--font-body);
+  padding:14px 14px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;min-height:52px}
+.pk[data-on="1"]{background:var(--surface-3);box-shadow:inset 0 0 0 2px var(--jim)}
+.pk .tick{margin-left:auto;color:var(--jim);font-weight:800;opacity:0}
+.pk[data-on="1"] .tick{opacity:1}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface-2);border-top:1px solid var(--line-strong);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:9px;z-index:5}
+.bar .row{display:flex;align-items:center;gap:12px;max-width:620px;margin-inline:auto;width:100%}
+.count{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:.06em;white-space:nowrap}
+.count.done{color:var(--good)}
+.btn{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--fg);
+  font:700 15px var(--font-body);padding:12px 18px;border-radius:10px;cursor:pointer;flex:1}
+.btn.go{background:var(--jim);color:#120B00;border-color:var(--jim)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:17px;font-weight:700;
+  letter-spacing:.06em;word-break:break-all;background:var(--bg);border:1px dashed var(--jim);
+  border-radius:9px;padding:13px;text-align:center;color:var(--jim)}
+.hide{display:none}
+.muted{color:var(--muted)} .small{font-size:13.5px}
+.done-card{border:1px solid var(--gold);border-radius:13px;padding:17px;background:var(--surface);display:grid;gap:12px}
+.done-card h2{font-family:var(--font-display);margin:0;font-size:22px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold)}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:11px">
+    <div>
+      <p class="k">UEFA Champions League 2026/27</p>
+      <h1>Jim<span class="v"> v </span>Brien</h1>
+    </div>
+    <div class="rule"></div>
+  </header>
+  <p class="note"><b>Pick the winner of every match.</b> There is no draw button &mdash; back one team or the other.
+     If the match ends level you both get a point. When all 18 are done you get a short code: send that to Brien.</p>
+  <div class="mdpick" id="mdpick"></div>
+  <p class="muted small" id="deadline"></p>
+  <main id="list"></main>
+  <section class="done-card hide" id="donecard">
+    <h2>All 18 done</h2>
+    <p class="muted small" style="margin:0">Send this code to Brien. That is all he needs.</p>
+    <div class="code" id="code"></div>
+    <button class="btn go" id="copy">Copy the code</button>
+    <a class="btn" id="mail" style="text-align:center;text-decoration:none;display:block">Email it to Brien</a>
+    <p class="muted small" style="margin:0">You can change a pick any time before the first game kicks off &mdash;
+       just tap a different team and send the new code.</p>
+  </section>
+</div>
+<div class="bar">
+  <div class="row">
+    <span class="count" id="count">0 of 18</span>
+    <button class="btn go" id="finish" disabled>Get my code</button>
+  </div>
+</div>
+<script>
+var FX={"4":[["Shakhtar","Sporting CP"],["Galatasaray","Stuttgart"],["Barcelona","Aston Villa"],["Atleti","Bayern Munchen"],["Man Utd","Roma"],["Feyenoord","Inter"],["Bodo/Glimt","Lille"],["Villarreal","Paris"],["LASK","S. Bratislava"],["Fenerbahce","Liverpool"],["AEK Athens","Real Madrid"],["B. Dortmund","Real Betis"],["Porto","Napoli"],["PSV","Club Brugge"],["Leipzig","Man City"],["Slavia Praha","Arsenal"],["Lens","Como"],["Viking","Sabah"]],"5":[["Bodo/Glimt","LASK"],["Galatasaray","Aston Villa"],["Real Madrid","PSV"],["Man City","Napoli"],["Arsenal","B. Dortmund"],["Feyenoord","Porto"],["Leipzig","Lens"],["S. Bratislava","Real Betis"],["Como","AEK Athens"],["Slavia Praha","Villarreal"],["Sabah","Barcelona"],["Paris","Roma"],["Inter","Stuttgart"],["Atleti","Viking"],["Sporting CP","Man Utd"],["Club Brugge","Liverpool"],["Lille","Bayern Munchen"],["Shakhtar","Fenerbahce"]],"6":[["Villarreal","Sabah"],["Viking","Feyenoord"],["Bayern Munchen","Slavia Praha"],["Barcelona","Man City"],["Roma","Sporting CP"],["Aston Villa","Paris"],["Man Utd","Leipzig"],["Napoli","Club Brugge"],["AEK Athens","Galatasaray"],["Real Betis","Como"],["S. Bratislava","Shakhtar"],["Liverpool","Porto"],["Arsenal","Real Madrid"],["B. Dortmund","Inter"],["PSV","Atleti"],["Stuttgart","Lille"],["LASK","Fenerbahce"],["Lens","Bodo/Glimt"]],"7":[["Bodo/Glimt","Atleti"],["Galatasaray","Feyenoord"],["Real Madrid","LASK"],["Inter","Liverpool"],["Aston Villa","B. Dortmund"],["Porto","Slavia Praha"],["Lille","S. Bratislava"],["Stuttgart","Club Brugge"],["AEK Athens","Roma"],["Fenerbahce","Villarreal"],["Sabah","Napoli"],["Sporting CP","Barcelona"],["Man Utd","Bayern Munchen"],["Real Betis","Arsenal"],["Leipzig","Shakhtar"],["Como","Paris"],["Lens","Man City"],["Viking","PSV"]],"8":[["Paris","Galatasaray"],["Bayern Munchen","Real Betis"],["Liverpool","Lens"],["Man City","Sporting CP"],["Arsenal","Sabah"],["Barcelona","Como"],["Atleti","Fenerbahce"],["B. Dortmund","AEK Athens"],["Roma","Lille"],["Club Brugge","Bodo/Glimt"],["PSV","Stuttgart"],["Feyenoord","Leipzig"],["Napoli","Viking"],["Villarreal","Man Utd"],["Shakhtar","Real Madrid"],["Slavia Praha","Aston Villa"],["S. Bratislava","Inter"],["LASK","Porto"]]};
+var DT={"4":["2026-11-03","2026-11-04"],"5":["2026-11-24","2026-11-25"],"6":["2026-12-08","2026-12-09"],"7":["2027-01-19","2027-01-20"],"8":["2027-01-27"]};
+/* Jim's picks page. Static: nothing is saved anywhere but this browser.
+   The code at the end is the whole point - it carries the 18 picks.
+   Format: MD<n>-<18 letters H or A>-<check>  e.g. MD4-HAHHAAHAHHAAHHAHA-7
+   The check character catches a mistyped or truncated code when Brien
+   pastes it in. */
+var NICE={"Fenerbahce":"Fenerbahçe","Bayern Munchen":"Bayern München","Bodo/Glimt":"Bodø/Glimt"};
+function nm(t){return NICE[t]||t}
+var MDS=["4","5","6","7","8"];
+var MAILTO="brien@mcelr.net";
+var picks={}, md=null;
+
+function today(){var d=new Date();return d.toISOString().slice(0,10)}
+function openMds(){return MDS.filter(function(m){return today()<DT[m][0]})}
+function fmt(iso){var p=iso.split("-"),mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return (+p[2])+" "+mo[+p[1]-1]+" "+p[0]}
+
+/* ---- remembering taps between visits (this browser only) ---- */
+function load(){
+  try{var r=localStorage.getItem("jimPicks");if(r)picks=JSON.parse(r)||{}}catch(e){picks=picks||{}}
+}
+function save(){
+  try{localStorage.setItem("jimPicks",JSON.stringify(picks))}catch(e){}
+}
+
+function checkChar(s){
+  var n=0;for(var i=0;i<s.length;i++)n=(n*31+s.charCodeAt(i))%36;
+  return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".charAt(n);
+}
+function codeFor(m){
+  var a=(picks[m]||[]).join("");
+  return "MD"+m+"-"+a+"-"+checkChar("MD"+m+a);
+}
+function made(m){var a=picks[m]||[];return a.filter(function(v){return v}).length}
+
+function render(){
+  var open=openMds();
+  if(!md||open.indexOf(md)<0)md=open[0]||MDS[MDS.length-1];
+
+  var mp=document.getElementById("mdpick");
+  if(open.length>1){
+    mp.innerHTML='<span class="muted small">Matchday</span>'+open.map(function(m){
+      return '<button data-md="'+m+'" aria-pressed="'+(m===md)+'">'+m+(made(m)===18?" ✓":"")+'</button>'}).join("");
+  }else{ mp.innerHTML='<span class="count">Matchday '+md+'</span>'; }
+
+  var d=DT[md];
+  document.getElementById("deadline").textContent=
+    "Played "+(d.length>1?(fmt(d[0])+" and "+fmt(d[d.length-1])):fmt(d[0]))+
+    ". Picks close when the first game kicks off."+
+    (today()>=d[0]?"  — THIS MATCHDAY HAS STARTED, picks are closed.":"");
+
+  var f=FX[md],mine=picks[md]||[];
+  document.getElementById("list").innerHTML=f.map(function(mt,i){
+    return '<div class="m">'+
+      '<button class="pk" data-i="'+i+'" data-v="H" data-on="'+(mine[i]==="H"?1:0)+'">'+
+        '<span>'+nm(mt[0])+'</span><span class="tick">✓</span></button>'+
+      '<button class="pk" data-i="'+i+'" data-v="A" data-on="'+(mine[i]==="A"?1:0)+'">'+
+        '<span>'+nm(mt[1])+'</span><span class="tick">✓</span></button>'+
+    '</div>';
+  }).join("");
+
+  var n=made(md),c=document.getElementById("count");
+  c.textContent=n+" of 18";
+  c.className="count"+(n===18?" done":"");
+  document.getElementById("finish").disabled=(n!==18);
+  if(n!==18)document.getElementById("donecard").classList.add("hide");
+  else showCode();
+}
+
+function showCode(){
+  var code=codeFor(md);
+  document.getElementById("code").textContent=code;
+  var body="Here are my Matchday "+md+" picks.\n\n"+code+"\n";
+  document.getElementById("mail").href="mailto:"+MAILTO+
+    "?subject="+encodeURIComponent("Champions League picks - Matchday "+md)+
+    "&body="+encodeURIComponent(body);
+  document.getElementById("donecard").classList.remove("hide");
+}
+
+document.addEventListener("click",function(e){
+  var t=e.target.closest("button, a"); if(!t)return;
+  if(t.dataset.md){md=t.dataset.md;render();window.scrollTo(0,0);return}
+  if(t.dataset.v){
+    if(today()>=DT[md][0])return;              // matchday started, locked
+    var i=+t.dataset.i;
+    if(!picks[md])picks[md]=new Array(18).fill(null);
+    picks[md][i]=(picks[md][i]===t.dataset.v?null:t.dataset.v);
+    save();render();return;
+  }
+  if(t.id==="finish"){showCode();document.getElementById("donecard").scrollIntoView({behavior:"smooth"});return}
+  if(t.id==="copy"){
+    var code=codeFor(md),ok=false;
+    try{
+      var ta=document.createElement("textarea");ta.value=code;document.body.appendChild(ta);
+      ta.select();ok=document.execCommand("copy");document.body.removeChild(ta);
+    }catch(err){}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).catch(function(){});
+    t.textContent=ok?"Copied":"Press and hold the code to copy";
+    setTimeout(function(){t.textContent="Copy the code"},2500);
+    return;
+  }
+});
+
+load();render();
+
+</script>
+</body>
+</html>

@@ -123,6 +123,20 @@ def main():
         f.write(tpl.replace(MARK, inject))
     print("built", os.path.join(OUT_DIR, "index.html"))
 
+    # Jim's picks page - a plain copy, nothing injected. It saves nothing and
+    # only hands him a code to send on.
+    picks_src = os.path.join(HERE, "UEFA_picks_page.html")
+    if os.path.exists(picks_src):
+        picks_dir = os.path.join(OUT_DIR, "picks")
+        os.makedirs(picks_dir, exist_ok=True)
+        with open(picks_src, encoding="utf-8") as f:
+            page = f.read()
+        with open(os.path.join(picks_dir, "index.html"), "w", encoding="utf-8") as f:
+            f.write(page)
+        print("built", os.path.join(picks_dir, "index.html"))
+    else:
+        print("UEFA_picks_page.html is not in the repo, so Jim has no picks page.")
+
     done = scored_mds(state)
     if not done:
         print("No matchdays scored yet; no email.")

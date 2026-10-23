@@ -191,7 +191,7 @@ var ROUNDS=[{k:"PO",n:"KO play-offs",c:8,p:2},{k:"R16",n:"Round of 16",c:8,p:4},
 var STATIC=!!window.STATIC_MODE;
 var S={picks:{brien:{},jim:{}},results:{},bracket:{setup:{},picks:{brien:{},jim:{}},winners:{}}};
 if(STATIC&&window.STATIC_DATA)S=window.STATIC_DATA;
-var DB=null, who="brien", tab="results", upMd=4;
+var DB=null, who="brien", tab="results", upMd=4, codeFlash=null;
 var TODAY=(window.STATIC_DATE?new Date(window.STATIC_DATE+"T12:00:00Z"):new Date());
 
 /* ---------- fixtures ---------- */
@@ -246,6 +246,18 @@ function setPick(p,md,i,v){
   if(!S.picks[p])S.picks[p]={};
   if(!S.picks[p][md])S.picks[p][md]=new Array(18).fill(null);
   S.picks[p][md][i]=v;
+}
+/* Jim's picks page hands him a code like MD4-HAHHAAHAHHAAHHAHA-7.
+   The last character is a check digit, so a mistyped or clipped code is
+   rejected rather than quietly scoring the wrong picks. */
+function checkChar(s){var n=0;for(var i=0;i<s.length;i++)n=(n*31+s.charCodeAt(i))%36;
+  return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".charAt(n)}
+function readCode(raw){
+  var s=String(raw||"").toUpperCase().replace(/\s+/g,"");
+  var m=s.match(/MD([4-8])-([HA]{18})-([0-9A-Z])/);
+  if(!m)return {err:"That does not look like a picks code. It should look like MD4-HAHHAAHAHHAAHHAHA-7."};
+  if(checkChar("MD"+m[1]+m[2])!==m[3])return {err:"That code is damaged — a character has been changed or lost. Ask for it again."};
+  return {md:+m[1],arr:m[2].split("")};
 }
 function scoreMd(p,md){
   var rs=resultsFor(md); if(!rs||md<4)return null;
@@ -394,6 +406,14 @@ function picksView(){
   h+='<div class="who2"><span class="muted small">Entering picks for</span>'+
      '<span class="seg '+who+'"><button data-who="brien" aria-pressed="'+(who==="brien")+'">Brien</button>'+
      '<button data-who="jim" aria-pressed="'+(who==="jim")+'">Jim</button></span></div></div>';
+  if(who==="jim"){
+    h+='<section class="card"><h2 style="margin-bottom:4px">Jim\u2019s code</h2>'+
+       '<p class="muted small" style="margin:0 0 10px">Paste the code he sent from his picks page and it fills his 18 picks in one go.</p>'+
+       '<div class="row"><input type="text" id="jimcode" placeholder="MD4-HAHHAAHAHHAAHHAHA-7" style="flex:1;min-width:220px;text-transform:uppercase">'+
+       '<button class="btn go" id="readcode">Read it</button></div>'+
+       '<p class="muted small" id="codemsg" style="margin:9px 0 0'+(codeFlash?(';color:'+codeFlash.c):'')+'">'+(codeFlash?esc(codeFlash.t):'')+'</p></section>';
+    codeFlash=null;
+  }
   h+='<p class="note">Tap the team you think will win. Every match needs a pick — there is no draw button. If the match ends level you both get 1 point. A matchday locks itself the day its first game kicks off.</p>';
   MDS.forEach(function(md){
     var open=isOpen(md),done=hasResults(md),f=fixtures(md),rs=resultsFor(md);
@@ -618,6 +638,19 @@ document.addEventListener("click",function(e){
     saveResults(upMd).then(function(){msg.textContent="Saved.";msg.style.color="var(--good)";render()})
       .catch(function(){msg.textContent="Saved on this device only.";msg.style.color="var(--gold)";render()});
     return;
+  }
+  if(t.id==="readcode"){
+    var msg=document.getElementById("codemsg"),r=readCode(document.getElementById("jimcode").value);
+    if(r.err){msg.textContent=r.err;msg.style.color="var(--bad)";return}
+    if(!isOpen(r.md)){
+      msg.textContent="Matchday "+r.md+" is already locked, so those picks cannot be used.";
+      msg.style.color="var(--bad)";return;
+    }
+    if(!S.picks.jim)S.picks.jim={};
+    S.picks.jim[r.md]=r.arr;
+    savePicks("jim");
+    codeFlash={t:"Read Matchday "+r.md+" \u2014 all 18 of Jim\u2019s picks are in.",c:"var(--good)"};
+    render();return;
   }
   if(t.id==="copyexp"){
     var box=document.getElementById("exportbox"),em=document.getElementById("expmsg");
