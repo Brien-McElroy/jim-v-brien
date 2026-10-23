@@ -1,3 +1,29 @@
+Claude
+New session
+
+weekly-table.yml
+weekly-table.yml
+121 lines
+YML
+
+
+
+weekly-table.yml
+4.02 KB •121 lines
+•
+Formatting may be inconsistent from source
+
+# Runs once a day and does nothing most days.
+#
+# Premier League: unchanged from what has been working.
+# Champions League: every UEFA step is skipped unless a file called
+#   UEFA_live.flag exists in the repo. Create that file when Jim says yes;
+#   until then this workflow behaves exactly as it did before.
+#
+# Both games publish to the same GitHub Pages site, which is why they share
+# one job - two workflows deploying would overwrite each other.
+#   Premier League  ->  site/index.html
+#   Champions League -> site/uefa/index.html
 name: Weekly Premier League table
 
 on:
@@ -19,25 +45,48 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install browser
         run: |
           pip install playwright==1.48.0
           playwright install --with-deps chromium
+
+      # ---------------- Premier League ----------------
       - name: Fetch table
         run: python fetch_table.py
+
+      # ---------------- Champions League ----------------
+      # Reads UEFA's feed directly, no browser. Finishes quietly unless the
+      # next unscored matchday is complete.
+      - name: Fetch Champions League results
+        if: hashFiles('UEFA_live.flag') != ''
+        run: python UEFA_fetch_results.py
+
       - name: Save the dated table
         run: |
           git config user.name "table-bot"
           git config user.email "table-bot@users.noreply.github.com"
-          git add tables/
-          git diff --cached --quiet || git commit -m "Table for $(date -u +%F)"
+          git add tables/ UEFA_state.json UEFA_last_emailed.txt 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "Results for $(date -u +%F)"
           git push
+
       - name: Build Jim's page
         run: python build_site.py
+
+      - name: Build the Champions League page
+        if: hashFiles('UEFA_live.flag') != ''
+        run: python UEFA_build_site.py
+
+      - name: Write the Premier League summary
+        run: python make_summary.py
+
       - name: Upload Jim's page
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
+
+      # ---------------- emails ----------------
+      # The paste-ready table still goes to Brien alone (MAIL_TO).
       - name: Email the table
         if: hashFiles('email.txt') != ''
         env:
@@ -47,6 +96,28 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
         run: python send_email.py email.txt "Premier League table - weekly"
+
+      # The short summary goes to both players (MAIL_BOTH).
+      - name: Email the Premier League summary
+        if: hashFiles('summary.txt') != ''
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
+        run: python send_summary.py summary.txt "Premier League - Jim v Brien update"
+
+      - name: Email the Champions League summary
+        if: hashFiles('UEFA_live.flag') != '' && hashFiles('UEFA_email.txt') != ''
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
+        run: python send_summary.py UEFA_email.txt "Champions League - Brien v Jim update"
+
       - name: Switch off after the final matchweek
         if: hashFiles('season_over.flag') != ''
         env:
