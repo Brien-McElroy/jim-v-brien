@@ -131,6 +131,20 @@ ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
 .tie .sides{display:grid;gap:5px}
 .pts{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:10px}
+.picklist{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
+.picklist>div{background:var(--surface);padding:9px 11px;font-size:14.5px;font-weight:600;display:flex;gap:9px;align-items:baseline;min-width:0}
+.picklist .n{color:var(--muted);font-size:12px;font-weight:700;min-width:17px;text-align:right;flex:none}
+.picklist>div>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* both players' picks side by side */
+.cmp{width:100%;border-collapse:collapse}
+.cmp th{font:700 11px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:7px 5px;text-align:left}
+.cmp td{padding:8px 5px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+.cmp .fx{font-weight:600}
+.cmp .who-b{color:var(--brien);font-weight:700}
+.cmp .who-j{color:var(--jim);font-weight:700}
+.cmp .hit::after{content:" \2713";color:var(--good)}
+.cmp .res{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+@media (max-width:520px){.cmp td,.cmp th{padding:7px 3px;font-size:13px}}
 .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:17px;font-weight:700;letter-spacing:.06em;
   word-break:break-all;background:var(--bg);border:1px dashed var(--gold);border-radius:9px;padding:13px;
   text-align:center;color:var(--gold)}
@@ -282,17 +296,17 @@ function readCode(raw){
   var m=s.match(/MD([4-8])-([JB])-([HA]{18})-([0-9A-Z])/);
   if(m){
     if(checkChar("MD"+m[1]+m[2]+m[3])!==m[4])
-      return {err:"That code is damaged — a character has been changed or lost. Ask for it again."};
+      return {err:"That message is damaged — something was changed or lost in sending. Ask for it again."};
     return {md:+m[1],who:(m[2]==="J"?"jim":"brien"),arr:m[3].split("")};
   }
   // the first version of the picks page left the name out; those were Jim's
   m=s.match(/MD([4-8])-([HA]{18})-([0-9A-Z])/);
   if(m){
     if(checkChar("MD"+m[1]+m[2])!==m[3])
-      return {err:"That code is damaged — a character has been changed or lost. Ask for it again."};
+      return {err:"That message is damaged — something was changed or lost in sending. Ask for it again."};
     return {md:+m[1],who:"jim",arr:m[2].split("")};
   }
-  return {err:"That does not look like a picks code. It should look like MD4-J-HAHHAAHAHHAAHHAHA-7."};
+  return {err:"Could not find any picks in that. Paste the whole message, including the last line that starts with \u2018ref:\u2019."};
 }
 function scoreMd(p,md){
   var rs=resultsFor(md); if(!rs||md<4)return null;
@@ -451,10 +465,10 @@ function picksView(){
      '<span class="seg '+who+'"><button data-who="brien" aria-pressed="'+(who==="brien")+'">Brien</button>'+
      '<button data-who="jim" aria-pressed="'+(who==="jim")+'">Jim</button></span></div></div>';
   {
-    h+='<section class="card"><h2 style="margin-bottom:4px">Read a picks code</h2>'+
-       '<p class="muted small" style="margin:0 0 10px">Paste a code from the results page and it fills that player\u2019s 18 picks in one go. The code says who it is from.</p>'+
-       '<div class="row"><input type="text" id="jimcode" placeholder="MD4-HAHHAAHAHHAAHHAHA-7" style="flex:1;min-width:220px;text-transform:uppercase">'+
-       '<button class="btn go" id="readcode">Read it</button></div>'+
+    h+='<section class="card"><h2 style="margin-bottom:4px">Read a picks message</h2>'+
+       '<p class="muted small" style="margin:0 0 10px">Paste the whole email or text message a player sent from the results page. It fills their 18 picks in one go and works out who sent it.</p>'+
+       '<textarea id="jimcode" placeholder="Paste the whole message here" style="min-height:110px"></textarea>'+
+       '<div class="row" style="margin-top:9px"><button class="btn go" id="readcode">Read it</button></div>'+
        '<p class="muted small" id="codemsg" style="margin:9px 0 0'+(codeFlash?(';color:'+codeFlash.c):'')+'">'+(codeFlash?esc(codeFlash.t):'')+'</p></section>';
     codeFlash=null;
   }
@@ -637,17 +651,80 @@ function makePicksView(){
     h+='<section class="card" style="text-align:center"><h2 style="margin:0;color:var(--muted)">'+n+' of 18 picked</h2>'+
        '<p class="muted small" style="margin:8px 0 0">Your code appears here once all 18 are done. Your taps are remembered on this device.</p></section>';
   }else{
-    var code=makeCode(MY,myMd,myArr(myMd));
     var to=(MY==="jim"?"brien@mcelr.net":"fifeboy@yahoo.com");
-    var body="Here are my Matchday "+myMd+" picks.\n\n"+code+"\n";
+    var other=(MY==="jim"?"Brien":"Jim");
+    var txt=myMessage(myMd);
     h+='<section class="card" style="border-color:var(--gold)"><h2 style="margin-bottom:4px;color:var(--gold)">All 18 done</h2>'+
-       '<p class="muted small" style="margin:0 0 11px">Send this code to '+(MY==="jim"?"Brien":"Jim")+'. That is all he needs.</p>'+
-       '<div class="code" id="mycode">'+esc(code)+'</div>'+
-       '<div class="row" style="margin-top:11px"><button class="btn go" id="mycopy">Copy the code</button>'+
-       '<a class="btn" style="text-align:center;text-decoration:none" href="mailto:'+to+
+       '<p class="muted small" style="margin:0 0 11px">Send these to '+other+' and you are finished.</p>'+
+       '<div class="picklist">'+myListHtml(myMd)+'</div>'+
+       '<div class="row" style="margin-top:12px">'+
+       '<a class="btn go" style="text-align:center;text-decoration:none" href="mailto:'+to+
        '?subject='+encodeURIComponent("Champions League picks - Matchday "+myMd)+
-       '&body='+encodeURIComponent(body)+'">Email it</a></div>'+
-       '<p class="muted small" style="margin:11px 0 0">Change a pick any time before kick-off — tap a different team and send the new code.</p></section>';
+       '&body='+encodeURIComponent(txt)+'">Email these to '+other+'</a>'+
+       '<button class="btn" id="mycopy">Copy them</button></div>'+
+       '<p class="muted small" style="margin:12px 0 0">Change a pick any time before kick-off — tap a different team and send them again.</p></section>';
+  }
+  return h;
+}
+
+/* What a player sends: their picks in plain words, with a single reference
+   line at the end so the other page can read them back without retyping. */
+function myListHtml(md){
+  var f=fixtures(md),a=myArr(md);
+  return f.map(function(m,i){
+    return '<div><span class="n">'+(i+1)+'</span>'+esc(nm(a[i]==="H"?m.h:m.a))+'</div>';
+  }).join("");
+}
+function myMessage(md){
+  var f=fixtures(md),a=myArr(md),L=[];
+  L.push("My Matchday "+md+" picks:"); L.push("");
+  f.forEach(function(m,i){ L.push(("  "+(i+1)).slice(-4)+". "+nm(a[i]==="H"?m.h:m.a)); });
+  L.push(""); L.push("Sent from the Brien v Jim page.");
+  L.push("ref: "+makeCode(MY,md,a));
+  return L.join("\n")+"\n";
+}
+
+/* Both players' picks, side by side. Only shown once a matchday is locked
+   or scored, so neither can see the other's hand before kick-off. */
+var cmpMd=null;
+function bothPicksView(){
+  var shown=MDS.filter(function(m){return !isOpen(m)});
+  var h='';
+  if(!shown.length){
+    h+='<p class="note">Nothing to show yet. Each matchday\u2019s picks appear here the moment it kicks off '+
+       '\u2014 kept covered until then so neither of us can peek at the other\u2019s hand.</p>';
+    return h;
+  }
+  if(!cmpMd||shown.indexOf(cmpMd)<0)cmpMd=shown[shown.length-1];
+  if(shown.length>1){
+    h+='<div class="row"><span class="muted small">Matchday</span>'+shown.map(function(m){
+      return '<button class="btn'+(m===cmpMd?" go":"")+'" data-cmp="'+m+'">'+m+'</button>'}).join("")+'</div>';
+  }
+  var f=fixtures(cmpMd),rs=resultsFor(cmpMd);
+  var bp=(S.picks.brien||{})[cmpMd]||[],jp=(S.picks.jim||{})[cmpMd]||[];
+  if(!bp.length&&!jp.length){
+    h+='<p class="note warn">No picks were saved for Matchday '+cmpMd+'.</p>';
+    return h;
+  }
+  h+='<p class="muted small" style="margin:0">'+esc(mdDateLabel(cmpMd))+(rs?' \u00b7 scored':' \u00b7 locked, not played yet')+'</p>';
+  h+='<div class="scroll"><table class="cmp"><thead><tr><th>Match</th><th>Brien</th><th>Jim</th>'+(rs?'<th>Result</th>':'')+'</tr></thead><tbody>';
+  f.forEach(function(m,i){
+    var hw=rs?(rs[i][0]>rs[i][1]):null, aw=rs?(rs[i][1]>rs[i][0]):null, drew=rs?(rs[i][0]===rs[i][1]):false;
+    function cell(pk,cls){
+      if(!pk)return '<td class="muted">\u2014</td>';
+      var t=(pk==="H"?m.h:m.a), right=rs&&!drew&&((pk==="H"&&hw)||(pk==="A"&&aw));
+      return '<td class="'+cls+(right?" hit":"")+'">'+esc(nm(t))+'</td>';
+    }
+    h+='<tr><td class="fx">'+esc(nm(m.h))+' <span class="muted">v</span> '+esc(nm(m.a))+'</td>'+
+       cell(bp[i],"who-b")+cell(jp[i],"who-j")+
+       (rs?('<td class="res"><b>'+rs[i][0]+'\u2013'+rs[i][1]+'</b>'+(drew?'<br><span class="muted" style="font-size:11px">drawn</span>':'')+'</td>'):'')+'</tr>';
+  });
+  h+='</tbody></table></div>';
+  if(rs){
+    var b=scoreMd("brien",cmpMd),j=scoreMd("jim",cmpMd);
+    if(b&&j)h+='<p class="muted small" style="margin:10px 0 0">Matchday '+cmpMd+': '+
+      '<span class="who-b">Brien '+b.pts+'</span> \u00b7 <span class="who-j">Jim '+j.pts+'</span>'+
+      ' \u2014 a tick marks a winner called right.</p>';
   }
   return h;
 }
@@ -688,7 +765,7 @@ function rulesView(){
 
 /* ---------- shell ---------- */
 var TABS=STATIC
- ?[["results","Results"],["makepicks","Make picks"],["table","Table"],["rules","Rules"],["bracket","Bracket · optional"]]
+ ?[["results","Results"],["makepicks","Make picks"],["both","Both picks"],["table","Table"],["rules","Rules"],["bracket","Bracket · optional"]]
  :[["results","Results"],["picks","Picks"],["table","Table"],["update","Update"],["rules","Rules"],["bracket","Bracket · optional"]];
 
 function render(){
@@ -700,8 +777,8 @@ function render(){
     ? ("scored · "+(nx?("Matchday "+nx+" on "+mdDateLabel(nx)):"that is the lot — champion crowned"))
     : ("picks close "+fmtDate(mdOpens(4)));
   document.getElementById("mastsub").textContent=(seasonDone()?"Matchdays 4-8 · complete":"Matchdays 4-8 · for fun")+(STATIC?" · read only":"");
-  var v={results:resultsView,picks:picksView,makepicks:makePicksView,table:tableView,
-         bracket:bracketView,update:updateView,rules:rulesView}[tab];
+  var v={results:resultsView,picks:picksView,makepicks:makePicksView,both:bothPicksView,
+         table:tableView,bracket:bracketView,update:updateView,rules:rulesView}[tab];
   document.getElementById("app").className="tab-body";
   document.getElementById("app").innerHTML=v?v():"";
 }
@@ -756,6 +833,7 @@ document.addEventListener("click",function(e){
   }
   if(t.dataset.me!==undefined){MY=t.dataset.me||null;mySave();render();window.scrollTo(0,0);return}
   if(t.dataset.mymd){myMd=+t.dataset.mymd;render();return}
+  if(t.dataset.cmp){cmpMd=+t.dataset.cmp;render();return}
   if(t.dataset.my!==undefined&&t.dataset.v){
     if(!isOpen(myMd))return;
     var k=myKey(myMd),ix=+t.dataset.my;
@@ -764,12 +842,12 @@ document.addEventListener("click",function(e){
     mySave();render();return;
   }
   if(t.id==="mycopy"){
-    var el=document.getElementById("mycode"),txt=el.textContent,ok=false;
+    var txt=myMessage(myMd),ok=false;
     try{var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);
         ta.select();ok=document.execCommand("copy");document.body.removeChild(ta)}catch(e){}
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).catch(function(){});
-    t.textContent=ok?"Copied":"Press and hold the code to copy";
-    setTimeout(function(){t.textContent="Copy the code"},2500);
+    t.textContent=ok?"Copied":"Select the list and copy it";
+    setTimeout(function(){t.textContent="Copy them"},2500);
     return;
   }
   if(t.id==="readcode"){
