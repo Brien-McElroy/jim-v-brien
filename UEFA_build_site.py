@@ -123,19 +123,21 @@ def main():
         f.write(tpl.replace(MARK, inject))
     print("built", os.path.join(OUT_DIR, "index.html"))
 
-    # Jim's picks page - a plain copy, nothing injected. It saves nothing and
-    # only hands him a code to send on.
-    picks_src = os.path.join(HERE, "UEFA_picks_page.html")
-    if os.path.exists(picks_src):
-        picks_dir = os.path.join(OUT_DIR, "picks")
-        os.makedirs(picks_dir, exist_ok=True)
-        with open(picks_src, encoding="utf-8") as f:
-            page = f.read()
-        with open(os.path.join(picks_dir, "index.html"), "w", encoding="utf-8") as f:
-            f.write(page)
-        print("built", os.path.join(picks_dir, "index.html"))
-    else:
-        print("UEFA_picks_page.html is not in the repo, so Jim has no picks page.")
+    # Making picks is a tab on the page itself now, so there is only one link to
+    # share. This keeps the old /picks/ address working for anyone who has it.
+    picks_dir = os.path.join(OUT_DIR, "picks")
+    os.makedirs(picks_dir, exist_ok=True)
+    with open(os.path.join(picks_dir, "index.html"), "w", encoding="utf-8") as f:
+        f.write('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                '<meta name="robots" content="noindex,nofollow">'
+                '<meta http-equiv="refresh" content="0; url=../#picks">'
+                '<title>Make your picks</title></head><body>'
+                '<p>Taking you to the picks page. '
+                '<a href="../#picks">Tap here if nothing happens.</a></p>'
+                '<script>location.replace("../#picks");</script>'
+                '</body></html>')
+    print("built", os.path.join(picks_dir, "index.html"), "(redirect to the Make picks tab)")
 
     done = scored_mds(state)
     if not done:
@@ -197,6 +199,18 @@ def main():
         "",
         "Scoring: +2 for the right winner, +1 each if the match was drawn.",
     ]
+    nxt = next((m for m in MDS if ("md%d" % m) not in state["results"]), None)
+    if nxt and not over:
+        first = sorted({r[0] for r in fixtures["future"][str(nxt)]})[0]
+        d = datetime.date.fromisoformat(first)
+        left = (d - datetime.date.today()).days
+        when = ("TODAY" if left <= 0 else "tomorrow" if left == 1 else "in %d days" % left)
+        body += ["",
+                 "-- Next up --",
+                 "Matchday %d picks close %s, on %s."
+                 % (nxt, when, d.strftime("%A %d %B").replace(" 0", " ")),
+                 "Make them on the same page, under 'Make picks': " + LINK]
+
     if over:
         body += ["",
                  "That is the whole bet - eight matchdays, played for fun, and a crown at the end.",
