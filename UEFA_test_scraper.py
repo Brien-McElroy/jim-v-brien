@@ -445,7 +445,7 @@ WANT2 = {
     "player name": ("playerName", "name", "internationalName", "displayName", "shortName"),
     "goals":       ("goals", "value", "goalsScored", "totalGoals"),
     "assists":     ("assists", "goalAssist"),
-    "their club":  ("teamId", "team.id", "teamName", "team.internationalName"),
+    "their club":  ("clubId", "teamId", "team.id", "teamName", "team.internationalName"),
     "home town":   ("city", "cityName", "town", "venueCity", "homeCity", "venue.city"),
     "founded":     ("founded", "foundationDate", "foundedYear", "yearFounded", "established"),
     "stadium":     ("venue", "venueName", "stadium", "stadiumName", "venue.name"),
@@ -570,14 +570,127 @@ def probe_players(log):
 
 
 # ---------------------------------------------------------------- the test
-BUILD = "2026-10-24b"   # printed first, so the log says which copy ran
+# ----------------------------------------------- probe 3: who scored?
+# UEFA publishes no top-scorer feed we can reach. But we already read every
+# match from them. If the goalscorers travel with the match, we can work out
+# our own top scorers from Matchdays 1-8 and keep them current for nothing.
+# This probe asks exactly that, and nothing else.
+
+PLAYED_DATE = "2026-10-21"      # a Matchday 3 date, long finished
+
+GOAL_WORDS = ("goal", "scor", "event", "player", "squad", "lineup",
+              "assist", "card", "substit")
+
+
+def probe_goals(log):
+    log("=" * 66)
+    log("Probe 3: do the goalscorers travel with the match?")
+    log("=" * 66)
+    log("")
+    log("-" * 66)
+    log("PART A - every single field on one finished match")
+    log("-" * 66)
+
+    url = FEED.format(d=PLAYED_DATE)
+    data = try_feed("the matches of %s" % PLAYED_DATE, url, log)
+    mid = None
+    if not isinstance(data, list) or not data:
+        log("   The match feed gave nothing back, which is odd - it works daily.")
+    else:
+        m = data[0]
+        flat = flatten(m)
+        mid = m.get("id") or flat.get("id")
+        log("")
+        log("   %d fields on this one match. All of them:" % len(flat))
+        for k in sorted(flat):
+            log("     %-46s %s" % (k[:46], str(flat[k])[:52]))
+
+        log("")
+        log("   -- any field whose NAME hints at goals or players --")
+        hits = [k for k in sorted(flat)
+                if any(w in k.lower() for w in GOAL_WORDS)]
+        if hits:
+            for k in hits:
+                log("     FOUND  %-42s %s" % (k[:42], str(flat[k])[:52]))
+        else:
+            log("     none. The match carries the score and nothing about who got them.")
+
+        log("")
+        log("   -- and the raw text, in case something is buried --")
+        raw = json.dumps(m)
+        for w in GOAL_WORDS:
+            n = raw.lower().count(w)
+            log("     the word %-10s appears %d time(s)" % ("'" + w + "'", n))
+
+    log("")
+    log("-" * 66)
+    log("PART B - asking for that one match in more detail")
+    log("-" * 66)
+    if not mid:
+        log("")
+        log("   No match id to work with, so nothing to try here.")
+    else:
+        log("")
+        log("   the match id is %s" % mid)
+        tries = [
+            ("that match on its own",
+             "https://match.uefa.com/v5/matches/%s?competitionId=1&seasonYear=2027" % mid),
+            ("that match, asking for events",
+             FEED.format(d=PLAYED_DATE) + "&optionalFields=MATCH_EVENTS,GOALS,SCORERS,PLAYER"),
+            ("the events of that match",
+             "https://match.uefa.com/v5/matches/%s/events?competitionId=1" % mid),
+            ("who played in that match",
+             "https://matchstats.uefa.com/v1/matches/%s/players?competitionId=1" % mid),
+            ("the line-ups of that match",
+             "https://match.uefa.com/v5/matches/%s/lineups?competitionId=1" % mid),
+        ]
+        for label, u in tries:
+            d2 = try_feed(label, u, log)
+            if d2 is not None:
+                f2 = report_fields(d2, log)
+                hits = [k for k in sorted(f2)
+                        if any(w in k.lower() for w in GOAL_WORDS)]
+                log("       fields hinting at goals or players: %s"
+                    % (", ".join(hits[:12]) if hits else "none"))
+
+    log("")
+    log("-" * 66)
+    log("PART C - one last look for a statistics feed")
+    log("-" * 66)
+    for label, u in [
+        ("player stats on the players feed",
+         "https://comp.uefa.com/v2/players?competitionId=1&seasonYear=2027&phase=ALL"
+         "&limit=5&offset=0&optionalFields=PLAYER_STATISTICS,STATISTICS,GOALS"),
+        ("a statistics feed",
+         "https://comp.uefa.com/v2/statistics?competitionId=1&seasonYear=2027&phase=ALL&limit=5&offset=0"),
+        ("a player-ranking feed",
+         "https://comp.uefa.com/v2/playerrankings?competitionId=1&seasonYear=2027&phase=ALL&limit=5&offset=0"),
+    ]:
+        d3 = try_feed(label, u, log)
+        if d3 is not None:
+            f3 = report_fields(d3, log)
+            hits = [k for k in sorted(f3) if "goal" in k.lower() or "scor" in k.lower()]
+            log("       anything about goals: %s" % (", ".join(hits[:12]) if hits else "no"))
+
+    log("")
+    log("=" * 66)
+    log("WHAT THIS DECIDES: if goalscorers are in there, I can work out our own")
+    log("top scorers from the matchdays and keep them current for free. If they")
+    log("are not, top scorers are left out rather than invented. Copy the log in.")
+    log("=" * 66)
+
+
+BUILD = "2026-10-24c"   # printed first, so the log says which copy ran
 
 
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else "3"
     print("UEFA_test_scraper.py  build %s  ·  asked for: %r" % (BUILD, arg))
-    print("(modes this build knows: 3, 4, clubs, players)")
+    print("(modes this build knows: 3, 4, clubs, players, goals)")
     print("")
+    if str(arg).strip().lower().startswith("goal"):
+        probe_goals(print)
+        return
     if str(arg).strip().lower().startswith("player"):
         probe_players(print)
         return
