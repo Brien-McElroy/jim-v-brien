@@ -570,8 +570,14 @@ def probe_players(log):
 
 
 # ---------------------------------------------------------------- the test
+BUILD = "2026-10-24b"   # printed first, so the log says which copy ran
+
+
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else "3"
+    print("UEFA_test_scraper.py  build %s  ·  asked for: %r" % (BUILD, arg))
+    print("(modes this build knows: 3, 4, clubs, players)")
+    print("")
     if str(arg).strip().lower().startswith("player"):
         probe_players(print)
         return
