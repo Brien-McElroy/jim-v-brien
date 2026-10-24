@@ -13,8 +13,9 @@ on:
         description: "What to test"
         required: true
         type: choice
-        default: "players - top scorers, and anything else UEFA will give us"
+        default: "goals - do the goalscorers travel with the match?"
         options:
+          - "goals - do the goalscorers travel with the match?"
           - "players - top scorers, and anything else UEFA will give us"
           - "clubs - what UEFA holds about each club"
           - "3 - read Matchday 3, whose scores we already know"
