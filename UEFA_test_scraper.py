@@ -18,6 +18,9 @@ It never fails the run and never emails anybody.
 
     python UEFA_test_scraper.py          # Matchday 3 (known answers)
     python UEFA_test_scraper.py 4        # Matchday 4 for real
+    python UEFA_test_scraper.py clubs    # what UEFA holds about each club
+    python UEFA_test_scraper.py players  # top scorers, and the club trivia
+                                         #   the clubs probe could not find
 """
 import json, os, re, sys, unicodedata, urllib.request, urllib.error
 
@@ -398,9 +401,180 @@ def probe_scorers(log):
     log("whether top scorers can be had safely, or whether we leave them out.")
 
 
+# ------------------------------------------------- probe 2: players, and the
+# club details the first probe could not find (home town, founded, stadium)
+
+# Addresses worth trying. None of these is confirmed - that is the whole
+# point of the probe. Anything that answers gets its fields listed in full
+# so nothing has to be guessed afterwards.
+PLAYER_URLS = [
+    ("player ranking, goals",
+     "https://matchstats.uefa.com/v1/player-ranking?competitionId=1&seasonYear=2027"
+     "&phase=ALL&limit=10&offset=0&stats=goals&order=DESC&optionalFields=PLAYER,TEAM"),
+    ("player ranking, plain",
+     "https://matchstats.uefa.com/v1/player-ranking?competitionId=1&seasonYear=2027"
+     "&phase=ALL&limit=10&offset=0"),
+    ("players list (comp v2)",
+     "https://comp.uefa.com/v2/players?competitionId=1&seasonYear=2027&phase=ALL&limit=10&offset=0"),
+    ("players list (comp v1)",
+     "https://comp.uefa.com/v1/players?competitionId=1&seasonYear=2027&phase=ALL&limit=10&offset=0"),
+    ("squad of one club",
+     "https://comp.uefa.com/v2/squads?competitionId=1&seasonYear=2027&teamId=52707"),
+    ("squad, other spelling",
+     "https://comp.uefa.com/v2/teams/52707/squad?competitionId=1&seasonYear=2027"),
+    ("player stats",
+     "https://matchstats.uefa.com/v1/players/statistics?competitionId=1&seasonYear=2027"
+     "&phase=ALL&limit=10&offset=0"),
+]
+
+# If any of these answers, the club trivia can be read from UEFA instead of
+# being typed out by hand.
+CLUB_DETAIL_URLS = [
+    ("one club in full",
+     "https://comp.uefa.com/v2/teams/52707?competitionId=1&seasonYear=2027"),
+    ("clubs with extra fields",
+     "https://comp.uefa.com/v2/teams?competitionId=1&seasonYear=2027&phase=ALL"
+     "&limit=3&offset=0&optionalFields=VENUE,CITY,FOUNDED,TEAM_DETAIL"),
+    ("club profile",
+     "https://comp.uefa.com/v2/teams/52707/profile?competitionId=1&seasonYear=2027"),
+    ("venues",
+     "https://comp.uefa.com/v2/venues?competitionId=1&seasonYear=2027&limit=5&offset=0"),
+]
+
+WANT2 = {
+    "player name": ("playerName", "name", "internationalName", "displayName", "shortName"),
+    "goals":       ("goals", "value", "goalsScored", "totalGoals"),
+    "assists":     ("assists", "goalAssist"),
+    "their club":  ("teamId", "team.id", "teamName", "team.internationalName"),
+    "home town":   ("city", "cityName", "town", "venueCity", "homeCity", "venue.city"),
+    "founded":     ("founded", "foundationDate", "foundedYear", "yearFounded", "established"),
+    "stadium":     ("venue", "venueName", "stadium", "stadiumName", "venue.name"),
+    "nickname":    ("nickname", "nickName", "alias", "shortClubName"),
+}
+
+
+def first_object(data):
+    """These feeds answer either with a list, or with a wrapper holding one."""
+    if isinstance(data, list):
+        return data[0] if data else None
+    if isinstance(data, dict):
+        for k in ("data", "items", "results", "players", "teams", "entities", "content"):
+            v = data.get(k)
+            if isinstance(v, list) and v:
+                return v[0]
+            if isinstance(v, dict):
+                return v
+        return data
+    return None
+
+
+def try_feed(label, url, log, tries=2):
+    """Ask once, and once more if it times out - a single timeout proves nothing."""
+    log("")
+    log("  %s" % label)
+    log("  GET %s" % url)
+    for attempt in range(1, tries + 1):
+        req = urllib.request.Request(url, headers={
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                          "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+            "Referer": "https://www.uefa.com/",
+            "Origin": "https://www.uefa.com",
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=45) as r:
+                raw = r.read().decode("utf-8", "replace")
+            try:
+                data = json.loads(raw)
+            except Exception:
+                log("    -> answered, but not with JSON (%d characters)" % len(raw))
+                log("       starts: %s" % re.sub(r"\s+", " ", raw)[:160])
+                return None
+            n = len(data) if isinstance(data, list) else "?"
+            log("    -> ANSWERED. %s item(s)" % n)
+            return data
+        except urllib.error.HTTPError as e:
+            log("    -> refused: HTTP %s %s" % (e.code, e.reason))
+            return None
+        except Exception as e:
+            log("    -> %s%s" % (e, "  (trying once more)" if attempt < tries else ""))
+    return None
+
+
+def report_fields(data, log):
+    obj = first_object(data)
+    if not isinstance(obj, dict):
+        log("       nothing object-shaped came back.")
+        return {}
+    flat = flatten(obj)
+    log("       every field on the first one:")
+    for k in sorted(flat)[:60]:
+        v = str(flat[k])
+        log("         %-42s %s" % (k[:42], v[:60]))
+    if len(flat) > 60:
+        log("         ... and %d more fields" % (len(flat) - 60))
+    log("       what we were after:")
+    for want, names in WANT2.items():
+        hit = next((n for n in names if n in flat), None)
+        log("         %-12s %s" % (want, ("YES as '%s' = %s" % (hit, str(flat[hit])[:40]))
+                                          if hit else "no"))
+    return flat
+
+
+def probe_players(log):
+    log("=" * 66)
+    log("Probe 2: can we get player names and goals, and the club details")
+    log("         the first probe could not find?")
+    log("=" * 66)
+
+    log("")
+    log("-" * 66)
+    log("PART A - players and top scorers")
+    log("-" * 66)
+    found_any = False
+    for label, url in PLAYER_URLS:
+        data = try_feed(label, url, log)
+        if data is not None:
+            found_any = True
+            report_fields(data, log)
+    if not found_any:
+        log("")
+        log("   Nothing answered. Top scorers stay out of the comparison box.")
+
+    log("")
+    log("-" * 66)
+    log("PART B - home town, founded, stadium, nickname")
+    log("-" * 66)
+    found_b = False
+    for label, url in CLUB_DETAIL_URLS:
+        data = try_feed(label, url, log)
+        if data is not None:
+            found_b = True
+            report_fields(data, log)
+    if not found_b:
+        log("")
+        log("   Nothing answered. The club trivia has to be typed out by hand")
+        log("   and checked by eye - which is what the Word file is for.")
+
+    log("")
+    log("-" * 66)
+    log("PART C - the top-scorer page, with a longer wait this time")
+    log("-" * 66)
+    probe_scorers(log)
+
+    log("")
+    log("=" * 66)
+    log("Copy this whole log into the chat. Whatever answered above is what")
+    log("goes in the box; whatever did not is left out rather than invented.")
+    log("=" * 66)
+
+
 # ---------------------------------------------------------------- the test
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else "3"
+    if str(arg).strip().lower().startswith("player"):
+        probe_players(print)
+        return
     if str(arg).strip().lower().startswith("club"):
         probe_clubs(print)
         probe_scorers(print)
