@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "table-bot"
           git config user.email "table-bot@users.noreply.github.com"
-          git add tables/ UEFA_state.json UEFA_last_emailed.txt 2>/dev/null || true
+          git add tables/ UEFA_state.json UEFA_scorers.json UEFA_last_emailed.txt 2>/dev/null || true
           git diff --cached --quiet || git commit -m "Results for $(date -u +%F)"
           git push
 
