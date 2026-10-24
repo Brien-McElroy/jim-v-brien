@@ -240,6 +240,9 @@ ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
 .sc.g2{background:rgba(91,228,155,.18);color:var(--good)}
 .sc.g1{background:rgba(255,211,110,.18);color:var(--gold)}
 .sc.g0{background:var(--surface-2);color:var(--muted)}
+.scn{font:600 12.5px var(--font-body)}
+.scg{font:800 11px var(--font-body);background:rgba(255,211,110,.18);color:var(--gold);
+  padding:1px 6px;border-radius:999px;white-space:nowrap}
 .cbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .cb{appearance:none;border:1px solid var(--line-strong);background:var(--surface-2);
   color:var(--fg);border-radius:12px;padding:13px 9px;cursor:pointer;
@@ -382,6 +385,55 @@ var DYK={
 "Stuttgart":"VfB stands for Verein fur Bewegungsspiele, which translates as club for movement games — a very literal piece of 1890s German naming.",
 "Viking":"From Stavanger, Norway’s oil capital, and one of the oldest clubs in the country at over 125 years old.",
 "Villarreal":"The town has only around 50,000 people, making it one of the smallest ever to host Champions League football. They won the Europa League in 2021."};
+
+/* ---------- goalscorers ----------
+   The daily job reads these out of UEFA's match feed and writes them to
+   UEFA_scorers.json, so this table keeps itself current. Each goal is
+   [player, their club id, minute, type]. Own goals are counted for the
+   club that benefited but never for the player, so nobody tops the chart
+   for scoring past his own keeper.
+   Nothing here exists on the Claude page, which has no job behind it -
+   so everything below quietly shows nothing when the data is absent. */
+var GOALS=(window.STATIC_SCORERS||null);
+var BYID={}; for(var _k in CLUBID){if(CLUBID.hasOwnProperty(_k))BYID[CLUBID[_k]]=_k}
+
+function goalRows(){
+  if(!GOALS)return [];
+  var out=[];
+  ALLMD.forEach(function(md){
+    var rows=GOALS["md"+md]; if(!Array.isArray(rows))return;
+    rows.forEach(function(g){
+      if(!Array.isArray(g)||g.length<2)return;
+      var club=BYID[g[1]]; if(!club)return;      // not one of our 36
+      out.push({md:md,name:String(g[0]),club:club,
+                min:+g[2]||0,own:/OWN/.test(String(g[3]||""))});
+    });
+  });
+  return out;
+}
+var _scTable=null;
+function scorerTable(){
+  if(_scTable)return _scTable;
+  var by={};
+  goalRows().forEach(function(g){
+    if(g.own)return;                              // not the player's goal
+    var k=g.name+"|"+g.club;
+    if(!by[k])by[k]={name:g.name,club:g.club,n:0};
+    by[k].n++;
+  });
+  var rows=Object.keys(by).map(function(k){return by[k]});
+  rows.sort(function(a,b){return b.n-a.n||(a.name<b.name?-1:1)});
+  _scTable=rows; return rows;
+}
+/* The club's leading scorer, and anyone level with him. */
+function topFor(t){
+  var rows=scorerTable().filter(function(r){return r.club===t});
+  if(!rows.length)return null;
+  var best=rows[0].n;
+  return {n:best,who:rows.filter(function(r){return r.n===best})
+                        .map(function(r){return r.name})};
+}
+function haveGoals(){return goalRows().length>0}
 
 function crest(t){var id=CLUBID[t];return id?("https://img.uefa.com/imgml/TP/teams/logos/240x240/"+id+".png"):""}
 function cmpLink(a,b){
@@ -756,6 +808,26 @@ function tableView(){
     h+='<tr class="'+c+'"><td>'+r.pos+'</td><td class="tm">'+esc(nm(r.t))+'</td><td>'+r.P+'</td><td>'+r.W+'</td><td>'+r.D+'</td><td>'+r.L+'</td><td>'+r.GF+'</td><td>'+r.GA+'</td><td>'+sgn(r.GD)+'</td><td><b>'+r.Pts+'</b></td></tr>';
   });
   h+='</tbody></table></div></section>';
+  if(haveGoals()){
+    var sc=scorerTable(),top=sc.slice(0,15),all=goalRows();
+    var ogs=all.filter(function(g){return g.own}).length;
+    h+='<section class="card"><h2 style="margin-bottom:4px">Top scorers</h2>'+
+       '<p class="muted small" style="margin:0 0 12px">Across all eight matchdays, '+
+       'counted from UEFA’s own match reports. '+all.length+' goal'+(all.length===1?'':'s')+' so far'+
+       (ogs?(', of which '+ogs+' own goal'+(ogs===1?'':'s')+' — credited to nobody'):'')+'.</p>'+
+       '<div class="scroll"><table><thead><tr><th>#</th><th>Player</th><th>Club</th><th>Goals</th></tr></thead><tbody>';
+    var pos=0,last=null;
+    top.forEach(function(r,i){
+      if(r.n!==last){pos=i+1;last=r.n}
+      h+='<tr><td>'+pos+'</td><td class="tm">'+esc(r.name)+'</td>'+
+         '<td class="tm muted">'+esc(nm(r.club))+'</td><td><b>'+r.n+'</b></td></tr>';
+    });
+    h+='</tbody></table></div>';
+    if(sc.length>top.length)
+      h+='<p class="muted small" style="margin:10px 0 0">'+(sc.length-top.length)+
+         ' more players have scored.</p>';
+    h+='</section>';
+  }
   var tb=tieBreak("brien"),tj=tieBreak("jim");
   if(tb.n||tj.n){
     h+='<section class="card"><h2 style="margin-bottom:4px">Tie-break standing</h2>'+
@@ -1092,6 +1164,15 @@ function compareHtml(){
     h+=srow("Goal diff",sgn(rh.GD),sgn(ra.GD));
     h+='<div class="srow"><div class="va">'+fcHtml(teamForm(H,5),true)+'</div>'+
        '<div class="lb">Form</div><div class="vb">'+fcHtml(teamForm(A,5),false)+'</div></div>';
+    var tH=topFor(H),tA=topFor(A);
+    if(tH||tA){
+      function sc(x){
+        if(!x)return '<span class="muted small">none yet</span>';
+        return '<span class="scn">'+esc(x.who.join(", "))+'</span> <span class="scg">'+x.n+'</span>';
+      }
+      h+='<div class="srow t"><div class="va">'+sc(tH)+'</div>'+
+         '<div class="lb">Top scorer</div><div class="vb">'+sc(tA)+'</div></div>';
+    }
     h+='</div>';
     h+='<p class="muted small" style="margin:9px 0 0">Form is oldest on the left. Hold a square to see that match.</p>';
   }else{

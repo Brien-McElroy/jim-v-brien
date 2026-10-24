@@ -15,6 +15,7 @@ import datetime, json, os, re, sys, unicodedata, urllib.request, urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, "UEFA_state.json")
+SCORERS = os.path.join(HERE, "UEFA_scorers.json")
 FIXTURES = os.path.join(HERE, "UEFA_fixtures.json")
 FEED = ("https://match.uefa.com/v5/matches"
         "?competitionId=1&seasonYear=2027&phase=ALL"
@@ -144,7 +145,50 @@ def goals(m):
     return None, None
 
 
-def read_date(d):
+def scorers_of(m):
+    """Who scored, straight out of the match. UEFA puts them under
+    playerEvents.scorers, each with the player, their club and the minute.
+
+    A player is credited to their OWN club (player.clubId), not to the team
+    the goal counted for - which matters for own goals, where those two are
+    not the same. The goal type is kept as UEFA gives it, so the page can
+    leave own goals out of a player's tally rather than crowning somebody
+    for scoring past their own keeper.
+    """
+    out = []
+    ev = m.get("playerEvents")
+    rows = (ev or {}).get("scorers") if isinstance(ev, dict) else None
+    if not isinstance(rows, list):
+        return out
+    for g in rows:
+        if not isinstance(g, dict):
+            continue
+        p = g.get("player") or {}
+        name = p.get("internationalName")
+        if not isinstance(name, str) or not name.strip():
+            tr = (p.get("translations") or {}).get("name") or {}
+            name = tr.get("EN") if isinstance(tr, dict) else None
+        if not isinstance(name, str) or not name.strip():
+            continue
+        club = p.get("clubId")
+        if club is None:
+            club = g.get("teamId")
+        try:
+            club = int(club)
+        except (TypeError, ValueError):
+            continue
+        t = g.get("time") or {}
+        minute = t.get("minute") if isinstance(t, dict) else None
+        try:
+            minute = int(minute)
+        except (TypeError, ValueError):
+            minute = 0
+        out.append([name.strip(), club, minute,
+                    str(g.get("goalType") or "SCORED").upper()])
+    return out
+
+
+def read_date(d, want_scorers=False):
     url = FEED.format(d=d)
     req = urllib.request.Request(url, headers={
         "Accept": "application/json",
@@ -167,7 +211,11 @@ def read_date(d):
                 if not H or not A:
                     continue
                 hg, ag = goals(m)
-                out[(H, A)] = None if hg is None or ag is None else (int(hg), int(ag))
+                val = None if hg is None or ag is None else (int(hg), int(ag))
+                if want_scorers:
+                    out[(H, A)] = (val, scorers_of(m))
+                else:
+                    out[(H, A)] = val
             return out
         except Exception as e:
             last = e
@@ -185,6 +233,60 @@ def load_json(path, fallback=None):
     return json.loads(txt) if txt else fallback
 
 
+def dates_of(fx, md):
+    """Which dates a matchday is played on, whether it is past or future."""
+    rows = (fx.get("played") or {}).get(str(md)) or (fx.get("future") or {}).get(str(md))
+    return (sorted({r[0] for r in rows}) if rows else [])
+
+
+def fill_scorers(fx, state, today):
+    """Keep UEFA_scorers.json in step with the matchdays we have scores for.
+
+    Runs on every job but asks UEFA for nothing once a matchday is stored,
+    so it costs one request per matchday ever - including the one-off
+    catch-up for Matchdays 1 to 3, which were played before the bet began.
+    """
+    sc = load_json(SCORERS, {}) or {}
+    have = set(sc.keys())
+
+    want = []
+    for md in range(1, 9):
+        key = "md%d" % md
+        if key in have:
+            continue
+        if md <= 3:
+            want.append(md)                      # played before we started
+        elif key in (state.get("results") or {}):
+            want.append(md)                      # we have the scores, so it is done
+
+    if not want:
+        return False
+
+    changed = False
+    for md in want:
+        dates = dates_of(fx, md)
+        if not dates or today < dates[-1]:
+            continue
+        rows = []
+        try:
+            for d in dates:
+                for (H, A), (val, goals_) in read_date(d, want_scorers=True).items():
+                    rows.extend(goals_)
+        except Exception as e:
+            print("  could not read the scorers for Matchday %d (%s)." % (md, e))
+            print("  Not a problem - it will try again tomorrow.")
+            continue
+        sc["md%d" % md] = rows
+        changed = True
+        print("  Matchday %d: %d goal(s) with a scorer named." % (md, len(rows)))
+
+    if changed:
+        with open(SCORERS, "w", encoding="utf-8") as f:
+            json.dump(sc, f, separators=(",", ":"), ensure_ascii=False)
+        print("Wrote %s" % os.path.basename(SCORERS))
+    return changed
+
+
 def main():
     fx = load_json(FIXTURES)
     if not fx:
@@ -195,6 +297,13 @@ def main():
     state.setdefault("results", {})
     state.setdefault("bracket", {"setup": {}, "picks": {"brien": {}, "jim": {}}, "winners": {}})
 
+    today = datetime.date.today().isoformat()
+
+    # Catch up on goalscorers for anything already scored. Silent and free
+    # once it has been done; this is also what backfills Matchdays 1 to 3.
+    print("Checking the goalscorers are up to date.")
+    fill_scorers(fx, state, today)
+
     todo = [md for md in MDS if ("md%d" % md) not in state["results"]]
     if not todo:
         print("All eight matchdays are already stored. Nothing to do.")
@@ -202,7 +311,6 @@ def main():
     md = todo[0]
     rows = fx["future"][str(md)]
     dates = sorted({r[0] for r in rows})
-    today = datetime.date.today().isoformat()
     if today < dates[-1]:
         print("Matchday %d runs %s. Not finished yet, nothing to do."
               % (md, " and ".join(dates)))
@@ -235,6 +343,10 @@ def main():
     print("Stored Matchday %d:" % md)
     for (dt, h, a), s in zip(rows, scores):
         print("  %-16s %d - %d  %s" % (h, s[0], s[1], a))
+
+    # and its goalscorers, now that the matchday counts as done
+    print("Reading who scored in Matchday %d." % md)
+    fill_scorers(fx, state, today)
     return 0
 
 

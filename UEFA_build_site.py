@@ -9,6 +9,7 @@ import json, os, datetime, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, "UEFA_state.json")
+SCORERS = os.path.join(HERE, "UEFA_scorers.json")
 TPL = os.path.join(HERE, "UEFA_site_template.html")
 OUT_DIR = os.path.join(HERE, "site", "uefa")
 MARK = "<!--STATIC-->"
@@ -114,10 +115,27 @@ def main():
     if MARK not in tpl:
         raise ValueError("UEFA_site_template.html is missing the %s marker" % MARK)
 
-    inject = ("<script>window.STATIC_MODE=true;window.STATIC_DATE=%s;window.STATIC_DATA=%s;</script>"
+    # Goalscorers, if the fetcher has read any. Separate from the state file
+    # because the job writes these itself - they are never pasted by hand.
+    scorers = {}
+    if os.path.exists(SCORERS):
+        try:
+            with open(SCORERS, encoding="utf-8") as f:
+                txt = f.read().strip()
+            scorers = json.loads(txt) if txt else {}
+        except Exception as e:
+            print("Could not read %s (%s) - the page will simply show no "
+                  "scorers." % (os.path.basename(SCORERS), e))
+            scorers = {}
+    n = sum(len(v) for v in scorers.values() if isinstance(v, list))
+    print("Goalscorers: %d goal(s) across %d matchday(s)." % (n, len(scorers)))
+
+    inject = ("<script>window.STATIC_MODE=true;window.STATIC_DATE=%s;"
+              "window.STATIC_DATA=%s;window.STATIC_SCORERS=%s;</script>"
               % (json.dumps(today), json.dumps({"picks": state["picks"],
                                                 "results": state["results"],
-                                                "bracket": state.get("bracket") or {}})))
+                                                "bracket": state.get("bracket") or {}}),
+                 json.dumps(scorers, ensure_ascii=False)))
     os.makedirs(OUT_DIR, exist_ok=True)
     with open(os.path.join(OUT_DIR, "index.html"), "w", encoding="utf-8") as f:
         f.write(tpl.replace(MARK, inject))
