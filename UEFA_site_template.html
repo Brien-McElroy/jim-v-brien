@@ -86,7 +86,7 @@ tr.q3 td:first-child{box-shadow:inset 3px 0 var(--bad)}
 .mlist{display:grid;gap:10px;background:transparent;padding:0}
 .m{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:1px;
   background:var(--line);border:1px solid var(--line-strong);border-radius:11px;overflow:hidden}
-.pk{appearance:none;border:0;background:var(--surface);color:var(--fg);font:600 12px var(--font-body);padding:11px 10px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
+.pk{appearance:none;border:0;background:var(--surface);color:var(--fg);font:600 15px var(--font-body);padding:11px 10px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
 .pk:last-child{text-align:right;justify-content:flex-end}
 .pk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pk[data-on="1"]{background:var(--surface-3);box-shadow:inset 0 0 0 2px var(--c,var(--accent))}
@@ -210,6 +210,36 @@ ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
 .fc{width:19px;height:19px;border-radius:5px;font:800 10px var(--font-body);
   display:flex;align-items:center;justify-content:center;color:var(--bg);flex:none}
 .fc.W{background:var(--good)} .fc.D{background:var(--muted)} .fc.L{background:var(--bad)}
+/* "About these clubs" — tucked away until you want it, then it stays. */
+.abt{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;
+  appearance:none;margin:12px 0 0;padding:10px 13px;cursor:pointer;
+  background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;
+  color:var(--fg);font:700 11.5px var(--font-body);letter-spacing:.13em;text-transform:uppercase}
+.abt:hover{border-color:var(--accent);color:var(--accent)}
+.abt[aria-expanded="true"]{border-bottom-left-radius:0;border-bottom-right-radius:0;
+  border-bottom-color:transparent;background:var(--surface-3)}
+.chev{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+  border-radius:50%;background:var(--line-strong);color:var(--fg);
+  font:700 14px var(--font-body);letter-spacing:0;flex:none}
+.abt:hover .chev{background:var(--accent);color:var(--accent-ink)}
+.about{border:1px solid var(--line-strong);border-top:0;
+  border-radius:0 0 10px 10px;padding:2px 13px 4px;background:var(--surface-2)}
+.about .srow:last-child{border-bottom:0}
+.srow.t .va,.srow.t .vb{font:500 12.5px var(--font-body);line-height:1.4;
+  font-variant-numeric:normal;overflow-wrap:anywhere}
+.dyk{display:grid;gap:9px;padding:11px 13px 13px;background:var(--surface-2);
+  border:1px solid var(--line-strong);border-top:0;border-radius:0 0 10px 10px}
+.dykc{display:grid;gap:3px;padding:9px 11px;background:var(--surface);
+  border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px}
+.dykc b{font:700 12px var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.dykc span{font-size:12.5px;line-height:1.5;color:var(--fg)}
+.about{border-radius:0;border-bottom:0}
+/* what each pick was worth, on the Both picks table */
+.sc{font:800 10px var(--font-body);letter-spacing:.04em;padding:1px 5px;border-radius:999px;
+  vertical-align:1px;white-space:nowrap}
+.sc.g2{background:rgba(91,228,155,.18);color:var(--good)}
+.sc.g1{background:rgba(255,211,110,.18);color:var(--gold)}
+.sc.g0{background:var(--surface-2);color:var(--muted)}
 .cbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .cb{appearance:none;border:1px solid var(--line-strong);background:var(--surface-2);
   color:var(--fg);border-radius:12px;padding:13px 9px;cursor:pointer;
@@ -273,6 +303,86 @@ var CLUBID={
  "Porto":50064,"Real Betis":52265,"Real Madrid":50051,"Roma":50137,
  "S. Bratislava":52797,"Sabah":2609356,"Shakhtar":52707,"Slavia Praha":52498,
  "Sporting CP":50149,"Stuttgart":50107,"Viking":52319,"Villarreal":70691};
+/* Club details, as checked and accepted by Brien on 24 October 2026.
+   UEFA's feed does not carry any of this, so it is typed out once here.
+   Order: full name, nickname, home town, founded, ground. */
+var CLUBINFO={
+"AEK Athens":["AEK Athens FC","Kitrinomavroi (the Yellow-Blacks)","Athens, Greece","1924","Agia Sophia OPAP Arena"],
+"Arsenal":["Arsenal FC","The Gunners","London, England","1886","Emirates Stadium"],
+"Aston Villa":["Aston Villa FC","The Villans","Birmingham, England","1874","Villa Park"],
+"Atleti":["Atletico de Madrid","Los Colchoneros (the Mattress Makers)","Madrid, Spain","1903","Riyadh Air Metropolitano"],
+"B. Dortmund":["Borussia Dortmund","Die Schwarzgelben (the Black and Yellows)","Dortmund, Germany","1909","Signal Iduna Park, the old Westfalenstadion"],
+"Barcelona":["Futbol Club Barcelona","Barca, or Blaugrana (Blue and Claret)","Barcelona, Spain","1899","Spotify Camp Nou"],
+"Bayern Munchen":["FC Bayern Munchen","Die Roten (the Reds)","Munich, Germany","1900","Allianz Arena"],
+"Bodo/Glimt":["FK Bodo/Glimt","Glimt, or the Yellow Horde","Bodo, Norway","1916","Aspmyra Stadion"],
+"Club Brugge":["Club Brugge KV","Blauw-Zwart (Blue and Black)","Bruges, Belgium","1891","Jan Breydel Stadium"],
+"Como":["Como 1907","I Lariani, after Lake Lario","Como, Italy","1907","Stadio Giuseppe Sinigaglia"],
+"Fenerbahce":["Fenerbahce SK","Sari Kanaryalar (the Yellow Canaries)","Istanbul, Turkey","1907","Sukru Saracoglu Stadium"],
+"Feyenoord":["Feyenoord Rotterdam","Trots van Zuid (Pride of the South)","Rotterdam, Netherlands","1908","De Kuip (the Tub)"],
+"Galatasaray":["Galatasaray SK","Cim Bom, or Aslanlar (the Lions)","Istanbul, Turkey","1905","Rams Park, the Ali Sami Yen ground"],
+"Inter":["FC Internazionale Milano","I Nerazzurri (the Black and Blues)","Milan, Italy","1908","San Siro (Giuseppe Meazza)"],
+"LASK":["Linzer Athletik-Sport-Klub","Die Schwarz-Weissen (the Black and Whites)","Linz, Austria","1908","Raiffeisen Arena"],
+"Leipzig":["RB Leipzig","Die Roten Bullen (the Red Bulls)","Leipzig, Germany","2009","Red Bull Arena"],
+"Lens":["Racing Club de Lens","Les Sang et Or (the Blood and Gold)","Lens, France","1906","Stade Bollaert-Delelis"],
+"Lille":["LOSC Lille","Les Dogues (the Mastiffs)","Lille, France","1944","Stade Pierre-Mauroy"],
+"Liverpool":["Liverpool FC","The Reds","Liverpool, England","1892","Anfield"],
+"Man City":["Manchester City FC","The Citizens","Manchester, England","1880","Etihad Stadium"],
+"Man Utd":["Manchester United FC","The Red Devils","Manchester, England","1878","Old Trafford"],
+"Napoli":["SSC Napoli","I Partenopei, or Gli Azzurri (the Blues)","Naples, Italy","1926","Stadio Diego Armando Maradona"],
+"PSV":["PSV Eindhoven","Boeren (the Farmers)","Eindhoven, Netherlands","1913","Philips Stadion"],
+"Paris":["Paris Saint-Germain","Les Rouge-et-Bleu (the Red and Blue)","Paris, France","1970","Parc des Princes"],
+"Porto":["Futebol Clube do Porto","Dragoes (the Dragons)","Porto, Portugal","1893","Estadio do Dragao"],
+"Real Betis":["Real Betis Balompie","Los Verdiblancos (the Green and Whites)","Seville, Spain","1907","Estadio Benito Villamarin"],
+"Real Madrid":["Real Madrid CF","Los Blancos (the Whites)","Madrid, Spain","1902","Santiago Bernabeu"],
+"Roma":["AS Roma","I Giallorossi (the Yellow and Reds)","Rome, Italy","1927","Stadio Olimpico"],
+"S. Bratislava":["SK Slovan Bratislava","Belasi (the Sky Blues)","Bratislava, Slovakia","1919","Tehelne pole"],
+"Sabah":["Sabah FK","—","Masazir, near Baku, Azerbaijan","2017","Bank Respublika Arena"],
+"Shakhtar":["FC Shakhtar Donetsk","Hirnyky (the Miners)","Donetsk, Ukraine","1936","Donbass Arena — not in use; home games are played elsewhere because of the war"],
+"Slavia Praha":["SK Slavia Praha","Sesivani (the Stitched Ones)","Prague, Czechia","1892","Fortuna Arena, in the Eden district"],
+"Sporting CP":["Sporting Clube de Portugal","Leoes (the Lions)","Lisbon, Portugal","1906","Estadio Jose Alvalade"],
+"Stuttgart":["VfB Stuttgart","Die Schwaben (the Swabians)","Stuttgart, Germany","1893","MHPArena, the old Neckarstadion"],
+"Viking":["Viking FK","Vikingene (the Vikings)","Stavanger, Norway","1899","SR-Bank Arena"],
+"Villarreal":["Villarreal CF","El Submarino Amarillo (the Yellow Submarine)","Villarreal, Spain","1923","Estadio de la Ceramica"]};
+
+/* One line per club, checked and accepted by Brien on 24 October 2026. */
+var DYK={
+"AEK Athens":"Founded by Greek refugees from Constantinople after the 1922 population exchange. The double-headed eagle on the badge is the old Byzantine imperial emblem — AEK stands for Athletic Union of Constantinople.",
+"Arsenal":"Started in 1886 as a works team at the Royal Arsenal armaments factory in Woolwich, south-east London, and only crossed the river in 1913. That is where the Gunners, and the cannon on the badge, come from.",
+"Aston Villa":"Started by members of a Wesleyan chapel cricket team who wanted something to do in winter. They were one of the twelve founder members of the Football League in 1888.",
+"Atleti":"Began as a Madrid offshoot of Athletic Bilbao, which is why both play in red and white stripes. The nickname, the Mattress Makers, is because those stripes looked like old Spanish mattress ticking.",
+"B. Dortmund":"The Yellow Wall — the south terrace at their ground — holds around 25,000 standing fans and is the largest standing terrace in European football.",
+"Barcelona":"Owned by its members, who elect the president rather than an owner appointing one. Hence the motto: mes que un club, more than a club.",
+"Bayern Munchen":"The Allianz Arena was built to be shared with their city neighbours 1860 Munich. Bayern later bought out 1860’s share and now have it to themselves.",
+"Bodo/Glimt":"The northernmost club ever to play in the Champions League, well inside the Arctic Circle. Early and late in the season the sun barely sets on their home games.",
+"Club Brugge":"They share the Jan Breydel Stadium with their own city rivals, Cercle Brugge — two clubs, one ground, in a city of 120,000.",
+"Como":"The ground sits right on the shore of Lake Como. The club was down in Italy’s fourth tier in the 2010s and has climbed all the way back.",
+"Fenerbahce":"Their ground is on the Asian side of Istanbul, so they play their home games in Asia and their derbies against Galatasaray in Europe.",
+"Feyenoord":"De Kuip, the Tub, opened in 1937 with a then-new two-tier design that let everyone stand close to the pitch, and it has hosted a long run of European finals.",
+"Galatasaray":"Founded by pupils at Galatasaray High School, one of the oldest schools in Turkey. In 2000 they became the first Turkish club to win a European trophy.",
+"Inter":"Formed in 1908 by a breakaway group from Milan who wanted to be allowed to field foreign players. That is what the Internazionale in the name means.",
+"LASK":"Linz’s club, and the oldest in Upper Austria. They spent years playing away from home while the Raiffeisen Arena was built, finally opening it in 2023.",
+"Leipzig":"Founded in 2009 by buying the licence of a fifth-tier village club. German rules forbid a sponsor’s name in a club’s, so the RB officially stands for RasenBallsport — lawn ball sports.",
+"Lens":"The Bollaert-Delelis holds more people than the town of Lens has residents. On a matchday the crowd outnumbers the place it came from.",
+"Lille":"Born of a wartime merger in 1944, when Olympique Lillois and Sporting Club Fives joined forces. The nickname, the Mastiffs, comes from the dog on the city’s arms.",
+"Liverpool":"Created in 1892 only because a rent dispute drove Everton out of Anfield. The landlord was left with an empty ground, so he started a new club to fill it.",
+"Man City":"Their ground was built as the main stadium for the 2002 Commonwealth Games and converted for football afterwards — the running track was dug out and the pitch lowered.",
+"Man Utd":"Started life as Newton Heath LYR, the works team of the Lancashire and Yorkshire Railway depot. The railwaymen played in green and gold.",
+"Napoli":"The number 10 shirt has been retired in Maradona’s honour since 2000, and in 2020 the stadium itself was renamed after him.",
+"PSV":"The PS is Philips. Founded in 1913 as a works team for employees of the electronics company, in the town the company was built around.",
+"Paris":"The youngest of the big European clubs by a distance — formed in 1970 out of a merger and a public subscription that signed up 20,000 founding members.",
+"Porto":"Went through the entire 2010/11 Portuguese league season unbeaten, and won the Europa League in the same year.",
+"Real Betis":"Seville’s other club. The name comes from Baetis, the Roman name for the Guadalquivir, the river that runs through the city.",
+"Real Madrid":"Real means royal — the title was granted by King Alfonso XIII in 1920, which is why there is a crown on top of the badge.",
+"Roma":"The she-wolf on the badge, suckling Romulus and Remus, is the founding myth of the city of Rome itself.",
+"S. Bratislava":"The only club from the former Czechoslovakia ever to win a major European trophy — the Cup Winners’ Cup in 1969.",
+"Sabah":"One of the youngest clubs you will meet at this level anywhere in Europe: founded in 2017, so younger than most of the players on the pitch.",
+"Shakhtar":"Shakhtar simply means miner. They have not played a home game in Donetsk since 2014 and have been a travelling club ever since.",
+"Slavia Praha":"One of the oldest clubs on the continent. It began in 1892 as a literary and debating society for students, and only later took up football.",
+"Sporting CP":"Cristiano Ronaldo’s first professional club — he left for Manchester United at 18. Figo and Nani came through the same academy.",
+"Stuttgart":"VfB stands for Verein fur Bewegungsspiele, which translates as club for movement games — a very literal piece of 1890s German naming.",
+"Viking":"From Stavanger, Norway’s oil capital, and one of the oldest clubs in the country at over 125 years old.",
+"Villarreal":"The town has only around 50,000 people, making it one of the smallest ever to host Champions League football. They won the Europa League in 2021."};
+
 function crest(t){var id=CLUBID[t];return id?("https://img.uefa.com/imgml/TP/teams/logos/240x240/"+id+".png"):""}
 function cmpLink(a,b){
   var x=CLUBID[a],y=CLUBID[b];
@@ -285,6 +395,20 @@ var ROUNDS=[{k:"PO",n:"KO play-offs",c:8,p:2},{k:"R16",n:"Round of 16",c:8,p:4},
 var STATIC=!!window.STATIC_MODE;
 var S={picks:{brien:{},jim:{}},results:{},bracket:{setup:{},picks:{brien:{},jim:{}},winners:{}}};
 if(STATIC&&window.STATIC_DATA)S=window.STATIC_DATA;
+/* The state file can arrive with pieces missing — an empty bracket, say,
+   before the draw is made. Fill in the shape so nothing reads off thin air. */
+(function(){
+  if(!S.picks)S.picks={};
+  if(!S.picks.brien)S.picks.brien={};
+  if(!S.picks.jim)S.picks.jim={};
+  if(!S.results)S.results={};
+  if(!S.bracket)S.bracket={};
+  if(!S.bracket.setup)S.bracket.setup={};
+  if(!S.bracket.winners)S.bracket.winners={};
+  if(!S.bracket.picks)S.bracket.picks={};
+  if(!S.bracket.picks.brien)S.bracket.picks.brien={};
+  if(!S.bracket.picks.jim)S.bracket.picks.jim={};
+})();
 var DB=null, who="brien", tab="results", upMd=4, codeFlash=null;
 var TODAY=(window.STATIC_DATE?new Date(window.STATIC_DATE+"T12:00:00Z"):new Date());
 
@@ -681,43 +805,72 @@ function bracketView(){
   return h;
 }
 
+/* The one thing done every matchday is copying the state across to GitHub,
+   so that goes first. Entering scores by hand is now a backstop - the
+   scraper reads them from UEFA daily - and the knockout draw only matters
+   if we carry on past Matchday 8. Both are folded away until wanted. */
+var upScores=false, upDraw=false;
+
 function updateView(){
   var f=fixtures(upMd),rs=resultsFor(upMd)||[];
-  var h='<p class="note">After a matchday finishes, put the 18 scores in here. Everything else — the table, both scores, the chart, the leader — works itself out.</p>';
-  h+='<section class="card"><div class="row" style="margin-bottom:12px"><span class="muted small">Matchday</span>';
-  MDS.forEach(function(md){h+='<button class="btn'+(md===upMd?" go":"")+'" data-up="'+md+'">'+md+'</button>'});
-  h+='</div>';
-  h+='<p class="muted small" style="margin:0 0 12px">'+esc(mdDateLabel(upMd))+'</p>';
-  h+='<div class="mlist" style="border-radius:10px;overflow:hidden">';
-  f.forEach(function(m,i){
-    var r=rs[i]||["",""];
-    h+='<div class="m" style="grid-template-columns:1fr 54px 54px 1fr">'+
-       '<div class="pk" style="cursor:default"><span>'+esc(nm(m.h))+'</span></div>'+
-       '<input type="number" min="0" max="19" data-sc="'+i+'" data-k="0" value="'+(r[0]===""?"":r[0])+'" style="border-radius:0;text-align:center;padding:8px 2px">'+
-       '<input type="number" min="0" max="19" data-sc="'+i+'" data-k="1" value="'+(r[1]===""?"":r[1])+'" style="border-radius:0;text-align:center;padding:8px 2px">'+
-       '<div class="pk" style="cursor:default;justify-content:flex-end;text-align:right"><span>'+esc(nm(m.a))+'</span></div></div>';
-  });
-  h+='</div>';
-  h+='<div class="row" style="margin-top:14px"><button class="btn go" id="saveres">Save Matchday '+upMd+'</button>'+
-     '<button class="btn" id="clearres">Clear</button><span class="muted small" id="savemsg"></span></div>';
-  h+='<details style="margin-top:14px"><summary class="muted small" style="cursor:pointer">Or paste the results as text</summary>'+
-     '<p class="muted small" style="margin:10px 0 6px">One match per line, any of: <code>Arsenal 2-1 Chelsea</code> or <code>Arsenal 2 Chelsea 1</code>.</p>'+
-     '<textarea id="pastebox" placeholder="Shakhtar 1-2 Sporting CP"></textarea>'+
-     '<div class="row" style="margin-top:9px"><button class="btn" id="parsebtn">Read the pasted scores</button><span class="muted small" id="parsemsg"></span></div></details>';
-  h+='</section>';
-  h+='<section class="card"><h2 style="margin-bottom:4px">Knockout draw</h2>'+
-     '<p class="muted small" style="margin:0 0 10px">Once a round is drawn, type its ties here, one per line, as <code>Team A v Team B</code>. To record a result, put a <code>*</code> next to the team that went through: <code>Arsenal* v Barcelona</code>.</p>';
-  ROUNDS.forEach(function(R){
-    var ties=S.bracket.setup[R.k]||[],w=S.bracket.winners[R.k]||[];
-    var txt=ties.map(function(t,i){return (t[0]||"")+(w[i]===0?"*":"")+" v "+(t[1]||"")+(w[i]===1?"*":"")}).join("\n");
-    h+='<h3 style="margin:14px 0 6px">'+esc(R.n)+' <span class="muted" style="font-weight:500;letter-spacing:0;text-transform:none">('+R.c+' tie'+(R.c===1?'':'s')+')</span></h3>'+
-       '<textarea data-bkset="'+R.k+'" style="min-height:'+(R.c>4?120:70)+'px">'+esc(txt)+'</textarea>';
-  });
-  h+='<div class="row" style="margin-top:12px"><button class="btn go" id="savebk">Save the draw</button><span class="muted small" id="bkmsg"></span></div></section>';
-  h+='<section class="card"><h2 style="margin-bottom:4px">Send to Jim’s page</h2>'+
-     '<p class="muted small" style="margin:0 0 10px">Copy this and replace the whole contents of <code>UEFA_state.json</code> in GitHub. That is what builds Jim’s page and his email.</p>'+
+  var done=lastDone();
+
+  var h='<p class="note"><b>Every matchday, one job:</b> copy the box below and paste it over <code>UEFA_state.json</code> in GitHub. That is what builds Jim\u2019s page and sends the email. The other two sections are only needed if something goes wrong, or if we carry on after Matchday 8.</p>';
+
+  h+='<section class="card" style="border-color:var(--accent)"><h2 style="margin-bottom:4px">Send to Jim\u2019s page</h2>'+
+     '<p class="muted small" style="margin:0 0 10px">Everything currently saved here \u2014 both players\u2019 picks, every result, the bracket \u2014 in one line.</p>'+
      '<textarea id="exportbox" readonly style="min-height:110px">'+esc(JSON.stringify({picks:S.picks,results:S.results,bracket:S.bracket}))+'</textarea>'+
-     '<div class="row" style="margin-top:9px"><button class="btn go" id="copyexp">Copy it</button><span class="muted small" id="expmsg"></span></div></section>';
+     '<div class="row" style="margin-top:9px"><button class="btn go" id="copyexp">Copy it</button><span class="muted small" id="expmsg"></span></div>'+
+     '<ol class="steps" style="margin-top:14px;font-size:13px;color:var(--muted)">'+
+     '<li>Tap <b>Copy it</b>.</li>'+
+     '<li>In GitHub, open <code>UEFA_state.json</code> and press the pencil.</li>'+
+     '<li>Select all of it, paste, then <b>Commit changes</b>.</li></ol></section>';
+
+  /* --- scores by hand, folded away --- */
+  h+='<button class="abt" id="togscores" aria-expanded="'+(upScores?"true":"false")+'">'+
+     '<span>Enter scores by hand \u00b7 backstop</span><span class="chev">'+(upScores?"\u2212":"+")+'</span></button>';
+  if(upScores){
+    h+='<section class="card" style="border-radius:0 0 10px 10px;border-top:0">'+
+       '<p class="muted small" style="margin:0 0 12px">The daily job reads these from UEFA on its own'+
+       (done>=4?(" \u2014 it has done so through Matchday "+done+"."):".")+
+       ' Only use this if it misses one.</p>';
+    h+='<div class="row" style="margin-bottom:12px"><span class="muted small">Matchday</span>';
+    MDS.forEach(function(md){h+='<button class="btn'+(md===upMd?" go":"")+'" data-up="'+md+'">'+md+'</button>'});
+    h+='</div>';
+    h+='<p class="muted small" style="margin:0 0 12px">'+esc(mdDateLabel(upMd))+'</p>';
+    h+='<div class="mlist" style="border-radius:10px;overflow:hidden">';
+    f.forEach(function(m,i){
+      var r=rs[i]||["",""];
+      h+='<div class="m" style="grid-template-columns:1fr 54px 54px 1fr">'+
+         '<div class="pk" style="cursor:default"><span>'+esc(nm(m.h))+'</span></div>'+
+         '<input type="number" min="0" max="19" data-sc="'+i+'" data-k="0" value="'+(r[0]===""?"":r[0])+'" style="border-radius:0;text-align:center;padding:8px 2px">'+
+         '<input type="number" min="0" max="19" data-sc="'+i+'" data-k="1" value="'+(r[1]===""?"":r[1])+'" style="border-radius:0;text-align:center;padding:8px 2px">'+
+         '<div class="pk" style="cursor:default;justify-content:flex-end;text-align:right"><span>'+esc(nm(m.a))+'</span></div></div>';
+    });
+    h+='</div>';
+    h+='<div class="row" style="margin-top:14px"><button class="btn go" id="saveres">Save Matchday '+upMd+'</button>'+
+       '<button class="btn" id="clearres">Clear</button><span class="muted small" id="savemsg"></span></div>';
+    h+='<details style="margin-top:14px"><summary class="muted small" style="cursor:pointer">Or paste the results as text</summary>'+
+       '<p class="muted small" style="margin:10px 0 6px">One match per line, any of: <code>Arsenal 2-1 Chelsea</code> or <code>Arsenal 2 Chelsea 1</code>.</p>'+
+       '<textarea id="pastebox" placeholder="Shakhtar 1-2 Sporting CP"></textarea>'+
+       '<div class="row" style="margin-top:9px"><button class="btn" id="parsebtn">Read the pasted scores</button><span class="muted small" id="parsemsg"></span></div></details>';
+    h+='</section>';
+  }
+
+  /* --- the knockout draw, folded away --- */
+  h+='<button class="abt" id="togdraw" aria-expanded="'+(upDraw?"true":"false")+'" style="margin-top:14px">'+
+     '<span>Knockout draw \u00b7 not before February</span><span class="chev">'+(upDraw?"\u2212":"+")+'</span></button>';
+  if(upDraw){
+    h+='<section class="card" style="border-radius:0 0 10px 10px;border-top:0">'+
+       '<p class="muted small" style="margin:0 0 10px">The draw is not made until after Matchday 8, on 27 January 2027, and only matters if we decide to keep going. Type each round\u2019s ties one per line as <code>Team A v Team B</code>. To record a result, put a <code>*</code> next to the team that went through: <code>Arsenal* v Barcelona</code>.</p>';
+    ROUNDS.forEach(function(R){
+      var ties=S.bracket.setup[R.k]||[],w=S.bracket.winners[R.k]||[];
+      var txt=ties.map(function(t,i){return (t[0]||"")+(w[i]===0?"*":"")+" v "+(t[1]||"")+(w[i]===1?"*":"")}).join("\n");
+      h+='<h3 style="margin:14px 0 6px">'+esc(R.n)+' <span class="muted" style="font-weight:500;letter-spacing:0;text-transform:none">('+R.c+' tie'+(R.c===1?'':'s')+')</span></h3>'+
+         '<textarea data-bkset="'+R.k+'" style="min-height:'+(R.c>4?120:70)+'px">'+esc(txt)+'</textarea>';
+    });
+    h+='<div class="row" style="margin-top:12px"><button class="btn go" id="savebk">Save the draw</button><span class="muted small" id="bkmsg"></span></div></section>';
+  }
   return h;
 }
 
@@ -836,21 +989,25 @@ function bothPicksView(){
   h+='<div class="scroll"><table class="cmp"><thead><tr><th>Match</th><th>Brien</th><th>Jim</th>'+(rs?'<th>Result</th>':'')+'</tr></thead><tbody>';
   f.forEach(function(m,i){
     var hw=rs?(rs[i][0]>rs[i][1]):null, aw=rs?(rs[i][1]>rs[i][0]):null, drew=rs?(rs[i][0]===rs[i][1]):false;
+    /* Every pick says plainly what it was worth: 2 for the right winner,
+       1 each when the match was drawn, nothing otherwise. */
     function cell(pk,cls){
       if(!pk)return '<td class="muted">\u2014</td>';
       var t=(pk==="H"?m.h:m.a), right=rs&&!drew&&((pk==="H"&&hw)||(pk==="A"&&aw));
-      return '<td class="'+cls+(right?" hit":"")+'">'+esc(nm(t))+'</td>';
+      var tag='';
+      if(rs)tag=' <span class="sc '+(right?"g2":drew?"g1":"g0")+'">'+(right?"+2":drew?"+1":"0")+'</span>';
+      return '<td class="'+cls+(right?" hit":"")+'">'+esc(nm(t))+tag+'</td>';
     }
     h+='<tr><td class="fx">'+esc(nm(m.h))+' <span class="muted">v</span> '+esc(nm(m.a))+'</td>'+
        cell(bp[i],"who-b")+cell(jp[i],"who-j")+
-       (rs?('<td class="res"><b>'+rs[i][0]+'\u2013'+rs[i][1]+'</b>'+(drew?'<br><span class="muted" style="font-size:11px">drawn</span>':'')+'</td>'):'')+'</tr>';
+       (rs?('<td class="res"><b>'+rs[i][0]+'\u2013'+rs[i][1]+'</b>'+(drew?'<span class="muted" style="font-size:11px;display:block">drawn</span>':'')+'</td>'):'')+'</tr>';
   });
   h+='</tbody></table></div>';
   if(rs){
     var b=scoreMd("brien",cmpMd),j=scoreMd("jim",cmpMd);
     if(b&&j)h+='<p class="muted small" style="margin:10px 0 0">Matchday '+cmpMd+': '+
       '<span class="who-b">Brien '+b.pts+'</span> \u00b7 <span class="who-j">Jim '+j.pts+'</span>'+
-      ' \u2014 a tick marks a winner called right.</p>';
+      ' \u2014 a tick and +2 mark a winner called right, +1 each where the match was drawn.</p>';
   }
   return h;
 }
@@ -897,6 +1054,8 @@ function rulesView(){
    downward swipe. Everything in it is computed from results already read
    from UEFA, so it keeps pace with the matchdays on its own. */
 var cmpOpen=null, cmpScroll=0;
+var aboutOpen=false;
+try{aboutOpen=localStorage.getItem("uclAbout")==="1"}catch(e){}
 function fcHtml(f,right){
   if(!f.length)return '<span class="muted small">no matches yet</span>';
   var s=f.map(function(x){
@@ -949,6 +1108,31 @@ function compareHtml(){
     h+='<p class="note" style="margin-top:10px">This is their only league-phase meeting — each club plays eight different opponents across the eight matchdays.</p>';
   }
 
+  /* Who they are, for the clubs we do not know. Opens on a tap and then
+     stays open for every match after it, so browsing is one decision,
+     not one per game. */
+  var iH=CLUBINFO[H],iA=CLUBINFO[A];
+  if(iH&&iA){
+    h+='<button class="abt" id="abtog" aria-expanded="'+(aboutOpen?"true":"false")+'">'+
+       '<span>About these clubs</span><span class="chev">'+(aboutOpen?"−":"+")+'</span></button>';
+    if(aboutOpen){
+      h+='<div class="stats about">';
+      [["Full name",0],["Nickname",1],["Home town",2],["Founded",3],["Ground",4]].forEach(function(r){
+        h+='<div class="srow t"><div class="va">'+esc(iH[r[1]])+'</div>'+
+           '<div class="lb">'+r[0]+'</div><div class="vb">'+esc(iA[r[1]])+'</div></div>';
+      });
+      h+='</div>';
+      if(DYK[H]||DYK[A]){
+        h+='<div class="dyk">';
+        [H,A].forEach(function(t){
+          if(!DYK[t])return;
+          h+='<div class="dykc"><b>'+esc(nm(t))+'</b><span>'+esc(DYK[t])+'</span></div>';
+        });
+        h+='</div>';
+      }
+    }
+  }
+
   var lk=cmpLink(H,A);
   if(lk)h+='<p style="margin:10px 0 0"><a class="btn" style="text-decoration:none;display:inline-block" href="'+lk+'" target="_blank" rel="noopener">Full comparison on UEFA.com ↗</a></p>';
 
@@ -967,7 +1151,7 @@ function compareHtml(){
 
 var TABS=STATIC
  ?[["results","Results"],["makepicks","Make picks"],["both","Both picks"],["table","Table"],["rules","Rules"],["bracket","Bracket · optional"]]
- :[["results","Results"],["picks","Picks"],["readmsg","Read a message"],["table","Table"],["update","Update"],["rules","Rules"],["bracket","Bracket · optional"]];
+ :[["results","Results"],["picks","Picks"],["both","Both picks"],["table","Table"],["rules","Rules"],["bracket","Bracket · optional"],["update","Update"],["readmsg","Read a message"]];
 
 function render(){
   var tb=document.getElementById("tabs");
@@ -1032,6 +1216,13 @@ document.addEventListener("click",function(e){
     render();return;
   }
   if(t.id==="cmpx"){cmpOpen=null;render();return}
+  if(t.id==="togscores"){upScores=!upScores;render();return}
+  if(t.id==="togdraw"){upDraw=!upDraw;render();return}
+  if(t.id==="abtog"){
+    aboutOpen=!aboutOpen;
+    try{localStorage.setItem("uclAbout",aboutOpen?"1":"0")}catch(e){}
+    render();return;
+  }
   /* Picking from inside the box: let the usual handler below record it,
      but close the box first so the pick lands you back on the list. */
   if(cmpOpen&&/\bcb\b/.test(t.className||""))cmpOpen=null;
