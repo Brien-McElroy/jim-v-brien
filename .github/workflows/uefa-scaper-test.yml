@@ -1,18 +1,24 @@
-
 # A test you run by hand. It does not touch the Premier League job, does not
 # change any file in the repo, does not build a page and does not email anyone.
 #
-# Version 3 reads UEFA's own data feed directly, so there is no browser to
-# install any more. The run takes seconds instead of seven minutes.
+# Version 4: the input is now a drop-down menu instead of a box you type in,
+# so there is nothing to spell and nothing left over from last time. Just
+# pick from the list and press the green button.
 name: UEFA scraper test
 
 on:
   workflow_dispatch:
     inputs:
-      matchday:
-        description: "Which matchday to try (3 is the one with known answers)"
-        required: false
-        default: "3"
+      what:
+        description: "What to test"
+        required: true
+        type: choice
+        default: "players - top scorers, and anything else UEFA will give us"
+        options:
+          - "players - top scorers, and anything else UEFA will give us"
+          - "clubs - what UEFA holds about each club"
+          - "3 - read Matchday 3, whose scores we already know"
+          - "4 - read Matchday 4 for real"
 
 jobs:
   test:
@@ -24,5 +30,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      # The menu entries read as sentences, so take the first word of
+      # whichever one was chosen and hand that to the script.
       - name: Try to read the results
-        run: python UEFA_test_scraper.py "${{ inputs.matchday || '3' }}"
+        run: |
+          CHOICE="${{ inputs.what }}"
+          MODE="${CHOICE%% *}"
+          echo "Running mode: $MODE"
+          python UEFA_test_scraper.py "$MODE"
