@@ -82,9 +82,11 @@ tr.q3 td:first-child{box-shadow:inset 3px 0 var(--bad)}
 .tag.open{color:var(--good);border-color:var(--good)}
 .tag.locked{color:var(--muted)}
 .tag.done{color:var(--accent);border-color:var(--accent)}
-.mlist{display:grid;gap:1px;background:var(--line);padding:1px}
-.m{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:1px;background:var(--line)}
-.pk{appearance:none;border:0;background:var(--surface);color:var(--fg);font:600 14px var(--font-body);padding:11px 10px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
+/* Each game sits in its own outlined box, with the compare button inside it. */
+.mlist{display:grid;gap:10px;background:transparent;padding:0}
+.m{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:1px;
+  background:var(--line);border:1px solid var(--line-strong);border-radius:11px;overflow:hidden}
+.pk{appearance:none;border:0;background:var(--surface);color:var(--fg);font:600 12px var(--font-body);padding:11px 10px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
 .pk:last-child{text-align:right;justify-content:flex-end}
 .pk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pk[data-on="1"]{background:var(--surface-3);box-shadow:inset 0 0 0 2px var(--c,var(--accent))}
@@ -131,6 +133,9 @@ ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
 .tie .sides{display:grid;gap:5px}
 .pts{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:10px}
+.ha{margin-left:auto;flex:none;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);opacity:.75}
+.pk:last-child .ha{margin-left:auto}
+@media (max-width:560px){.pk .ha{margin-left:auto}}
 .picklist{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
 .picklist>div{background:var(--surface);padding:9px 11px;font-size:14.5px;font-weight:600;display:flex;gap:9px;align-items:baseline;min-width:0}
 .picklist .n{color:var(--muted);font-size:12px;font-weight:700;min-width:17px;text-align:right;flex:none}
@@ -152,14 +157,67 @@ ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
 @media (max-width:560px){
   .board{grid-template-columns:1fr;gap:16px}
   .mid{display:none}
-  .mlist{gap:10px;background:transparent;padding:0}
-  .m{grid-template-columns:1fr;gap:1px;border-radius:10px;overflow:hidden;background:var(--line);border:1px solid var(--line-strong)}
+  .m{grid-template-columns:1fr}
   .pk{padding:9px 11px}
   .pk:last-child{text-align:left;justify-content:flex-start}
   .vs{display:none}
   .res{padding:4px 11px;justify-content:flex-start;font-size:12px;color:var(--muted)}
   th,td{padding:7px 4px}
 }
+/* ---- compare button on each match row ---- */
+/* The tint sits on the words themselves, not across the whole row. */
+.cmpb{grid-column:1/-1;appearance:none;border:0;border-top:1px solid var(--line-strong);
+  background:var(--surface);padding:8px 10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.cmpp{display:inline-flex;align-items:center;gap:7px;
+  background:rgba(61,214,245,.14);border:1px solid rgba(61,214,245,.32);
+  color:var(--accent);font:800 12px var(--font-body);letter-spacing:.12em;
+  text-transform:uppercase;padding:5px 13px 5px 7px;border-radius:999px}
+.cmpb:hover .cmpp{background:rgba(61,214,245,.26);border-color:var(--accent);color:#BFF2FF}
+.cmpi{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11px;
+  font-weight:800;letter-spacing:0;flex:none}
+
+/* ---- the comparison box ---- */
+.ovl{position:fixed;inset:0;z-index:60;background:rgba(4,7,16,.74);
+  display:flex;align-items:flex-end;justify-content:center}
+.sheet{position:relative;width:100%;max-width:540px;max-height:90vh;overflow:auto;
+  background:var(--surface);border:1px solid var(--line-strong);border-bottom:0;
+  border-radius:18px 18px 0 0;padding:12px 16px 20px;
+  box-shadow:0 -14px 50px rgba(0,0,0,.55)}
+@media (min-width:600px){
+  .ovl{align-items:center;padding:20px}
+  .sheet{border-bottom:1px solid var(--line-strong);border-radius:16px}
+}
+.grab{width:40px;height:4px;border-radius:99px;background:var(--line-strong);margin:0 auto 9px}
+.xb{position:absolute;top:9px;right:11px;appearance:none;background:var(--surface-2);
+  border:1px solid var(--line-strong);color:var(--muted);width:29px;height:29px;
+  border-radius:99px;font-size:13px;line-height:1;cursor:pointer}
+.xb:hover{color:var(--fg)}
+.cpr{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start;margin:6px 0 14px}
+.cpr .cl{text-align:center;min-width:0}
+.cpr img{width:52px;height:52px;object-fit:contain;display:block;margin:0 auto 7px}
+.cpr .cn{font:700 14.5px var(--font-body);line-height:1.25}
+.cpr .mid2{color:var(--muted);font:600 13px var(--font-body);padding-top:24px}
+.stats{border-top:1px solid var(--line)}
+.srow{display:grid;grid-template-columns:1fr 104px 1fr;gap:6px;align-items:center;
+  padding:7px 0;border-bottom:1px solid var(--line)}
+.srow .lb{text-align:center;font:700 10px var(--font-body);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.srow .va,.srow .vb{font:700 15px var(--font-body);font-variant-numeric:tabular-nums}
+.srow .va{text-align:right} .srow .vb{text-align:left}
+.frm{display:inline-flex;gap:3px} .frm.r{justify-content:flex-end}
+.fc{width:19px;height:19px;border-radius:5px;font:800 10px var(--font-body);
+  display:flex;align-items:center;justify-content:center;color:var(--bg);flex:none}
+.fc.W{background:var(--good)} .fc.D{background:var(--muted)} .fc.L{background:var(--bad)}
+.cbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.cb{appearance:none;border:1px solid var(--line-strong);background:var(--surface-2);
+  color:var(--fg);border-radius:12px;padding:13px 9px;cursor:pointer;
+  font:700 13.5px var(--font-body);display:flex;flex-direction:column;
+  align-items:center;gap:7px;min-width:0}
+.cb img{width:34px;height:34px;object-fit:contain;pointer-events:none}
+.cb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;pointer-events:none}
+.cb[data-on="1"]{background:var(--surface-3);box-shadow:inset 0 0 0 2px var(--c,var(--accent))}
 </style>
 <div class="wrap">
   <header class="stack" style="display:flex;flex-direction:column;gap:12px">
@@ -201,6 +259,25 @@ var FX={"played":{"1":[["2026-09-08","Club Brugge","Aston Villa",2,3],["2026-09-
 ----------------------------------------------------------------*/
 var NICE={"Fenerbahce":"Fenerbahçe","Bayern Munchen":"Bayern München","Bodo/Glimt":"Bodø/Glimt"};
 function nm(t){return NICE[t]||t}
+
+/* UEFA's own club numbers, read straight from their club feed on 24 Oct 2026.
+   They give us the crest image and the address of UEFA's comparison page.
+   Nothing here is typed from memory. */
+var CLUBID={
+ "AEK Athens":50129,"Arsenal":52280,"Aston Villa":52683,"Atleti":50124,
+ "B. Dortmund":52758,"Barcelona":50080,"Bayern Munchen":50037,"Bodo/Glimt":59333,
+ "Club Brugge":50043,"Como":79946,"Fenerbahce":52692,"Feyenoord":52749,
+ "Galatasaray":50067,"Inter":50138,"LASK":63405,"Leipzig":2603790,
+ "Lens":52277,"Lille":75797,"Liverpool":7889,"Man City":52919,
+ "Man Utd":52682,"Napoli":50136,"PSV":50062,"Paris":52747,
+ "Porto":50064,"Real Betis":52265,"Real Madrid":50051,"Roma":50137,
+ "S. Bratislava":52797,"Sabah":2609356,"Shakhtar":52707,"Slavia Praha":52498,
+ "Sporting CP":50149,"Stuttgart":50107,"Viking":52319,"Villarreal":70691};
+function crest(t){var id=CLUBID[t];return id?("https://img.uefa.com/imgml/TP/teams/logos/240x240/"+id+".png"):""}
+function cmpLink(a,b){
+  var x=CLUBID[a],y=CLUBID[b];
+  return (x&&y)?("https://www.uefa.com/uefachampionsleague/clubs/comparison/"+x+"/"+y+"/"):"";
+}
 var MDS=[4,5,6,7,8], ALLMD=[1,2,3,4,5,6,7,8];
 var ROUNDS=[{k:"PO",n:"KO play-offs",c:8,p:2},{k:"R16",n:"Round of 16",c:8,p:4},
             {k:"QF",n:"Quarter-finals",c:4,p:8},{k:"SF",n:"Semi-finals",c:2,p:16},
@@ -274,6 +351,38 @@ function standings(upto){
   return rows;
 }
 function gdMap(){var m={};standings(8).forEach(function(r){m[r.t]=r.GD});return m}
+
+/* ---------- one club's record, for the comparison box ----------
+   Every number below is worked out from the scores we have already read
+   from UEFA, so it moves on its own as each matchday is scored. */
+function teamRow(t){var r=null;standings(8).forEach(function(x){if(x.t===t)r=x});return r}
+function teamForm(t,n){
+  var out=[];
+  ALLMD.forEach(function(md){
+    var rs=resultsFor(md); if(!rs)return;
+    fixtures(md).forEach(function(m,i){
+      if(m.h!==t&&m.a!==t)return;
+      var home=(m.h===t),gf=home?rs[i][0]:rs[i][1],ga=home?rs[i][1]:rs[i][0];
+      out.push({md:md,opp:home?m.a:m.h,home:home,gf:gf,ga:ga,
+                r:(gf>ga?"W":gf<ga?"L":"D")});
+    });
+  });
+  return n?out.slice(-n):out;
+}
+/* In the league phase each club meets eight different clubs, so any two
+   of them meet at most once across the whole of Matchdays 1-8. */
+function h2h(a,b){
+  var out=null;
+  ALLMD.forEach(function(md){
+    fixtures(md).forEach(function(m,i){
+      if((m.h===a&&m.a===b)||(m.h===b&&m.a===a)){
+        var rs=resultsFor(md);
+        out={md:md,h:m.h,a:m.a,s:rs?rs[i]:null};
+      }
+    });
+  });
+  return out;
+}
 
 /* ---------- picks + scoring ---------- */
 function pickOf(p,md,i){var a=S.picks[p]&&S.picks[p][md];return a?(a[i]||null):null}
@@ -464,15 +573,7 @@ function picksView(){
   h+='<div class="who2"><span class="muted small">Entering picks for</span>'+
      '<span class="seg '+who+'"><button data-who="brien" aria-pressed="'+(who==="brien")+'">Brien</button>'+
      '<button data-who="jim" aria-pressed="'+(who==="jim")+'">Jim</button></span></div></div>';
-  {
-    h+='<section class="card"><h2 style="margin-bottom:4px">Read a picks message</h2>'+
-       '<p class="muted small" style="margin:0 0 10px">Paste the whole email or text message a player sent from the results page. It fills their 18 picks in one go and works out who sent it.</p>'+
-       '<textarea id="jimcode" placeholder="Paste the whole message here" style="min-height:110px"></textarea>'+
-       '<div class="row" style="margin-top:9px"><button class="btn go" id="readcode">Read it</button></div>'+
-       '<p class="muted small" id="codemsg" style="margin:9px 0 0'+(codeFlash?(';color:'+codeFlash.c):'')+'">'+(codeFlash?esc(codeFlash.t):'')+'</p></section>';
-    codeFlash=null;
-  }
-  h+='<p class="note">Tap the team you think will win. Every match needs a pick — there is no draw button. If the match ends level you both get 1 point. A matchday locks itself the day its first game kicks off.</p>';
+  h+='<p class="note">Tap the team you think will win. Every match needs a pick — there is no draw button. If the match ends level you both get 1 point. A matchday locks itself the day its first game kicks off, so you can change your picks right up until the first game kicks off.</p>';
   MDS.forEach(function(md){
     var open=isOpen(md),done=hasResults(md),f=fixtures(md),rs=resultsFor(md);
     var filled=f.filter(function(m,i){return pickOf(who,md,i)}).length;
@@ -485,14 +586,38 @@ function picksView(){
       var hw=rs?(rs[i][0]>rs[i][1]):null, aw=rs?(rs[i][1]>rs[i][0]):null;
       h+='<div class="m">';
       h+='<button class="pk" data-md="'+md+'" data-i="'+i+'" data-v="H" data-on="'+(pk==="H"?1:0)+'" style="--c:var(--'+who+')"'+dis+'>'+
-         '<span>'+esc(nm(m.h))+'</span>'+(rs&&hw?' <span class="pts">W</span>':'')+'</button>';
+         '<span>'+esc(nm(m.h))+'</span><span class="ha">(H)</span>'+(rs&&hw?' <span class="pts">W</span>':'')+'</button>';
       h+=rs?('<div class="res">'+rs[i][0]+'–'+rs[i][1]+'</div>'):'<div class="vs">v</div>';
       h+='<button class="pk" data-md="'+md+'" data-i="'+i+'" data-v="A" data-on="'+(pk==="A"?1:0)+'" style="--c:var(--'+who+')"'+dis+'>'+
-         (rs&&aw?'<span class="pts">W</span> ':'')+'<span>'+esc(nm(m.a))+'</span></button>';
+         (rs&&aw?'<span class="pts">W</span> ':'')+'<span>'+esc(nm(m.a))+'</span><span class="ha">(A)</span></button>';
+      if(open)h+='<button class="cmpb" data-cmp2="'+md+'-'+i+'-adm">'+
+        '<span class="cmpp"><span class="cmpi">⇄</span>Compare these teams</span></button>';
       h+='</div>';
     });
     h+='</div></section>';
   });
+  return h;
+}
+
+/* Reading in a message a player sent. On its own tab, so the picking list
+   is nothing but the picking list. */
+function readMsgView(){
+  var h='<p class="note">When Jim sends his picks, paste his whole email or text here. It fills in all 18 at once and works out who sent them — nothing to type.</p>';
+  h+='<section class="card"><h2 style="margin-bottom:4px">Read a picks message</h2>'+
+     '<p class="muted small" style="margin:0 0 10px">Paste the whole message, including the last line that starts with ‘ref:’ — that is the part that carries the picks.</p>'+
+     '<textarea id="jimcode" placeholder="Paste the whole message here" style="min-height:150px"></textarea>'+
+     '<div class="row" style="margin-top:9px"><button class="btn go" id="readcode">Read it</button></div>'+
+     '<p class="muted small" id="codemsg" style="margin:9px 0 0'+(codeFlash?(';color:'+codeFlash.c):'')+'">'+(codeFlash?esc(codeFlash.t):'')+'</p></section>';
+  codeFlash=null;
+  h+='<section class="card"><h2 style="margin-bottom:10px">What is in so far</h2><table><tbody>';
+  ["brien","jim"].forEach(function(p){
+    var line=MDS.map(function(md){
+      var a=(S.picks[p]||{})[md]||[],n=a.filter(function(v){return v}).length;
+      return '<span class="tag '+(n===18?"done":n?"open":"locked")+'" style="margin-right:5px">MD'+md+' '+n+'/18</span>';
+    }).join("");
+    h+='<tr><td class="tm"><span class="lead '+p+'">'+cap(p)+'</span></td><td style="text-align:left">'+line+'</td></tr>';
+  });
+  h+='</tbody></table></section>';
   return h;
 }
 
@@ -639,9 +764,10 @@ function makePicksView(){
   h+='<div class="mlist">';
   f.forEach(function(m,i){
     h+='<div class="m">'+
-      '<button class="pk" data-my="'+i+'" data-v="H" data-on="'+(mine[i]==="H"?1:0)+'" style="--c:var(--'+MY+')"><span>'+esc(nm(m.h))+'</span></button>'+
+      '<button class="pk" data-my="'+i+'" data-v="H" data-on="'+(mine[i]==="H"?1:0)+'" style="--c:var(--'+MY+')"><span>'+esc(nm(m.h))+'</span><span class="ha">(H)</span></button>'+
       '<div class="vs">v</div>'+
-      '<button class="pk" data-my="'+i+'" data-v="A" data-on="'+(mine[i]==="A"?1:0)+'" style="--c:var(--'+MY+')"><span>'+esc(nm(m.a))+'</span></button>'+
+      '<button class="pk" data-my="'+i+'" data-v="A" data-on="'+(mine[i]==="A"?1:0)+'" style="--c:var(--'+MY+')"><span>'+esc(nm(m.a))+'</span><span class="ha">(A)</span></button>'+
+      '<button class="cmpb" data-cmp2="'+myMd+'-'+i+'-my"><span class="cmpp"><span class="cmpi">⇄</span>Compare these teams</span></button>'+
       '</div>';
   });
   h+='</div>';
@@ -764,9 +890,84 @@ function rulesView(){
 }
 
 /* ---------- shell ---------- */
+/* ---------- the comparison box ----------
+   Opens over the pick list. The two pick buttons live inside it, so reading
+   the comparison and making the pick are the same action and the box closes
+   itself. It also shuts on the X, on a tap outside, on Esc, and on a
+   downward swipe. Everything in it is computed from results already read
+   from UEFA, so it keeps pace with the matchdays on its own. */
+var cmpOpen=null, cmpScroll=0;
+function fcHtml(f,right){
+  if(!f.length)return '<span class="muted small">no matches yet</span>';
+  var s=f.map(function(x){
+    return '<span class="fc '+x.r+'" title="MD'+x.md+' '+(x.home?"v ":"at ")+nm(x.opp)+" "+x.gf+"-"+x.ga+'">'+x.r+'</span>';
+  }).join("");
+  return '<span class="frm'+(right?" r":"")+'">'+s+'</span>';
+}
+function srow(lab,a,b){
+  return '<div class="srow"><div class="va">'+a+'</div><div class="lb">'+lab+'</div><div class="vb">'+b+'</div></div>';
+}
+function compareHtml(){
+  if(!cmpOpen)return '';
+  var md=cmpOpen.md,i=cmpOpen.i,mode=cmpOpen.mode;
+  var f=fixtures(md)[i]; if(!f)return '';
+  var H=f.h,A=f.a,rh=teamRow(H),ra=teamRow(A);
+  var pick=(mode==="my")?(myArr(md)[i]||null):pickOf(who,md,i);
+  var col=(mode==="my")?(MY||"brien"):who;
+  var h='<div class="ovl" id="ovl"><section class="sheet" id="sheet">';
+  h+='<div class="grab"></div><button class="xb" id="cmpx" aria-label="Close">✕</button>';
+  h+='<p class="muted small" style="margin:0 0 2px;text-align:center">Matchday '+md+' · match '+(i+1)+' of 18</p>';
+  h+='<div class="cpr">'+
+     '<div class="cl"><img src="'+crest(H)+'" alt="" onerror="this.style.visibility=\'hidden\'"><div class="cn">'+esc(nm(H))+'</div><div class="muted small">home</div></div>'+
+     '<div class="mid2">v</div>'+
+     '<div class="cl"><img src="'+crest(A)+'" alt="" onerror="this.style.visibility=\'hidden\'"><div class="cn">'+esc(nm(A))+'</div><div class="muted small">away</div></div>'+
+     '</div>';
+
+  if(rh&&ra){
+    h+='<div class="stats">';
+    h+=srow("Position",rh.pos,ra.pos);
+    h+=srow("Points",rh.Pts,ra.Pts);
+    h+=srow("Played",rh.P,ra.P);
+    h+=srow("W · D · L",rh.W+" · "+rh.D+" · "+rh.L,ra.W+" · "+ra.D+" · "+ra.L);
+    h+=srow("Scored · let in",rh.GF+"–"+rh.GA,ra.GF+"–"+ra.GA);
+    h+=srow("Goal diff",sgn(rh.GD),sgn(ra.GD));
+    h+='<div class="srow"><div class="va">'+fcHtml(teamForm(H,5),true)+'</div>'+
+       '<div class="lb">Form</div><div class="vb">'+fcHtml(teamForm(A,5),false)+'</div></div>';
+    h+='</div>';
+    h+='<p class="muted small" style="margin:9px 0 0">Form is oldest on the left. Hold a square to see that match.</p>';
+  }else{
+    h+='<p class="note">No results in yet, so there is nothing to compare on. The numbers fill in as the matchdays are scored.</p>';
+  }
+
+  var hh=h2h(H,A);
+  if(hh&&hh.s){
+    var w=hh.s[0]>hh.s[1]?hh.h:hh.s[1]>hh.s[0]?hh.a:null;
+    h+='<p class="note" style="margin-top:10px"><b>They have already met.</b> Matchday '+hh.md+': '+
+       esc(nm(hh.h))+' '+hh.s[0]+'–'+hh.s[1]+' '+esc(nm(hh.a))+
+       (w?(' — '+esc(nm(w))+' won.'):' — a draw.')+'</p>';
+  }else{
+    h+='<p class="note" style="margin-top:10px">This is their only league-phase meeting — each club plays eight different opponents across the eight matchdays.</p>';
+  }
+
+  var lk=cmpLink(H,A);
+  if(lk)h+='<p style="margin:10px 0 0"><a class="btn" style="text-decoration:none;display:inline-block" href="'+lk+'" target="_blank" rel="noopener">Full comparison on UEFA.com ↗</a></p>';
+
+  h+='<h3 style="margin:16px 0 8px;text-align:center">Who wins?</h3>';
+  var da=(mode==="my")?('data-my="'+i+'"'):('data-md="'+md+'" data-i="'+i+'"');
+  h+='<div class="cbtns">'+
+     '<button class="cb" '+da+' data-v="H" data-on="'+(pick==="H"?1:0)+'" style="--c:var(--'+col+')">'+
+       '<img src="'+crest(H)+'" alt="" onerror="this.style.visibility=\'hidden\'"><span>'+esc(nm(H))+'</span></button>'+
+     '<button class="cb" '+da+' data-v="A" data-on="'+(pick==="A"?1:0)+'" style="--c:var(--'+col+')">'+
+       '<img src="'+crest(A)+'" alt="" onerror="this.style.visibility=\'hidden\'"><span>'+esc(nm(A))+'</span></button>'+
+     '</div>';
+  h+='<p class="muted small" style="margin:10px 0 0;text-align:center">Picking closes this box and takes you back to the list.</p>';
+  h+='</section></div>';
+  return h;
+}
+
 var TABS=STATIC
  ?[["results","Results"],["makepicks","Make picks"],["both","Both picks"],["table","Table"],["rules","Rules"],["bracket","Bracket · optional"]]
- :[["results","Results"],["picks","Picks"],["table","Table"],["update","Update"],["rules","Rules"],["bracket","Bracket · optional"]];
+ :[["results","Results"],["picks","Picks"],["readmsg","Read a message"],["table","Table"],["update","Update"],["rules","Rules"],["bracket","Bracket · optional"]];
 
 function render(){
   var tb=document.getElementById("tabs");
@@ -778,10 +979,32 @@ function render(){
     : ("picks close "+fmtDate(mdOpens(4)));
   document.getElementById("mastsub").textContent=(seasonDone()?"Matchdays 4-8 · complete":"Matchdays 4-8 · for fun")+(STATIC?" · read only":"");
   var v={results:resultsView,picks:picksView,makepicks:makePicksView,both:bothPicksView,
-         table:tableView,bracket:bracketView,update:updateView,rules:rulesView}[tab];
+         readmsg:readMsgView,table:tableView,bracket:bracketView,update:updateView,
+         rules:rulesView}[tab];
   document.getElementById("app").className="tab-body";
-  document.getElementById("app").innerHTML=v?v():"";
+  /* Keep the page where it was. The pick list is long, and losing your
+     place on every tap is the quickest way to make 18 picks a chore. */
+  var sy=window.pageYOffset||document.documentElement.scrollTop||0;
+  if(cmpOpen)cmpScroll=cmpScroll||sy;
+  document.getElementById("app").innerHTML=(v?v():"")+compareHtml();
+  document.body.style.overflow=cmpOpen?"hidden":"";
+  if(!cmpOpen){var back=cmpScroll||sy;cmpScroll=0;if(back)window.scrollTo(0,back)}
 }
+/* The box shuts on Esc, and on a swipe down from inside it. */
+document.addEventListener("keydown",function(e){
+  if(cmpOpen&&(e.key==="Escape"||e.key==="Esc")){cmpOpen=null;render()}
+});
+var tStart=null;
+document.addEventListener("touchstart",function(e){
+  if(cmpOpen&&e.touches&&e.touches.length===1)tStart=e.touches[0].clientY;
+},{passive:true});
+document.addEventListener("touchend",function(e){
+  if(!cmpOpen||tStart===null)return;
+  var sh=document.getElementById("sheet");
+  var y=(e.changedTouches&&e.changedTouches[0])?e.changedTouches[0].clientY:null;
+  if(y!==null&&y-tStart>70&&(!sh||sh.scrollTop<=0)){cmpOpen=null;render()}
+  tStart=null;
+},{passive:true});
 
 /* ---------- persistence ---------- */
 function savePicks(p){
@@ -799,7 +1022,19 @@ function saveBracket(){
 
 /* ---------- events ---------- */
 document.addEventListener("click",function(e){
+  /* A tap on the dark area outside the box closes it. */
+  if(cmpOpen&&e.target&&e.target.id==="ovl"){cmpOpen=null;render();return}
   var t=e.target.closest("button"); if(!t)return;
+  if(t.dataset.cmp2){
+    var p=t.dataset.cmp2.split("-");
+    cmpScroll=window.pageYOffset||document.documentElement.scrollTop||0;
+    cmpOpen={md:+p[0],i:+p[1],mode:p[2]};
+    render();return;
+  }
+  if(t.id==="cmpx"){cmpOpen=null;render();return}
+  /* Picking from inside the box: let the usual handler below record it,
+     but close the box first so the pick lands you back on the list. */
+  if(cmpOpen&&/\bcb\b/.test(t.className||""))cmpOpen=null;
   if(t.dataset.tab){tab=t.dataset.tab;render();window.scrollTo(0,0);return}
   if(t.dataset.who){who=t.dataset.who;render();return}
   if(t.dataset.up){upMd=+t.dataset.up;render();return}
@@ -937,5 +1172,4 @@ if(!STATIC&&window.claude&&claude.use){
     });
   }).catch(function(){});
 }
-
 </script>
