@@ -219,9 +219,193 @@ def read_date(d, log, dump=False):
     return out
 
 
+# ------------------------------------------------- what does UEFA hold on each club?
+TEAMS_URL = ("https://comp.uefa.com/v2/teams"
+             "?competitionId=1&seasonYear=2027&phase=ALL&limit=50&offset=0")
+
+# The things we would like to show in the comparison box, and the field names
+# UEFA might plausibly use for each.
+WANTED = {
+    "full name":   ["displayOfficialName", "officialName", "internationalName", "displayName"],
+    "short name":  ["internationalName", "displayName", "mediumName", "shortName"],
+    "nickname":    ["nickname", "nickName", "alias", "shortClubName"],
+    "home town":   ["city", "cityName", "town", "venueCity", "homeCity"],
+    "founded":     ["founded", "foundationDate", "foundedYear", "yearFounded", "established"],
+    "stadium":     ["venue", "venueName", "stadium", "stadiumName", "homeVenue"],
+    "country":     ["countryCode", "country", "associationId"],
+    "club id":     ["id", "teamId"],
+}
+
+
+def flatten(o, prefix=""):
+    """Every field in the record, including nested ones, as path -> value."""
+    out = {}
+    if isinstance(o, dict):
+        for k, v in o.items():
+            p = (prefix + "." + k) if prefix else k
+            if isinstance(v, (dict, list)):
+                out.update(flatten(v, p))
+            else:
+                out[p] = v
+    elif isinstance(o, list):
+        for i, v in enumerate(o[:3]):
+            out.update(flatten(v, prefix + "[%d]" % i))
+    return out
+
+
+def probe_clubs(log):
+    log("=" * 66)
+    log("What UEFA holds about each club")
+    log("=" * 66)
+    log("")
+    log("  GET " + TEAMS_URL)
+    req = urllib.request.Request(TEAMS_URL, headers={
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        "Referer": "https://www.uefa.com/",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            raw = r.read().decode("utf-8", "replace")
+    except Exception as e:
+        log("    -> %s" % e)
+        log("")
+        log("VERDICT: could not reach the club feed. Copy this log into the chat.")
+        return
+    try:
+        data = json.loads(raw)
+    except Exception:
+        log("    -> not JSON. First 300 characters: " + raw[:300])
+        return
+    teams = data if isinstance(data, list) else (data.get("data") or data.get("teams") or [])
+    log("    -> %d clubs listed" % len(teams))
+    if not teams:
+        log("VERDICT: the feed answered but listed no clubs. Copy this log into the chat.")
+        return
+
+    log("")
+    log("-- every field on the first club, so nothing is guessed --")
+    flat = flatten(teams[0])
+    for k in sorted(flat):
+        v = str(flat[k])
+        if len(v) > 90:
+            v = v[:90] + "..."
+        log("   %-46s %s" % (k, v))
+
+    log("")
+    log("-- is what we want actually there? (across all %d clubs) --" % len(teams))
+    for label, keys in WANTED.items():
+        found = None
+        for t in teams:
+            f = flatten(t)
+            for key in keys:
+                hits = [k for k in f if k.split(".")[-1].lower() == key.lower() and f[k] not in (None, "")]
+                if hits:
+                    found = hits[0]
+                    break
+            if found:
+                break
+        if found:
+            have = sum(1 for t in teams if flatten(t).get(found) not in (None, ""))
+            ex = str(flatten(teams[0]).get(found, ""))[:40]
+            log("   %-11s YES  as '%s'  (%d of %d clubs)   e.g. %s"
+                % (label, found, have, len(teams), ex))
+        else:
+            log("   %-11s no   not under any of: %s" % (label, ", ".join(keys)))
+
+    log("")
+    log("-- the club ids, which is what the comparison link needs --")
+    names = []
+    for t in teams:
+        f = flatten(t)
+        nm = f.get("internationalName") or f.get("displayName") or "?"
+        names.append("%s=%s" % (nm, f.get("id", "?")))
+    for i in range(0, len(names), 3):
+        log("   " + "   ".join("%-26s" % n for n in names[i:i + 3]))
+
+    log("")
+    log("=" * 66)
+    log("VERDICT: read %d clubs. Copy this whole log into the chat and I will" % len(teams))
+    log("build the comparison box from exactly what is above - nothing invented.")
+
+
+SCORER_PAGE = "https://www.uefa.com/uefachampionsleague/top-scorer/"
+
+
+def get(url, log, label):
+    req = urllib.request.Request(url, headers={
+        "Accept": "*/*",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        "Referer": "https://www.uefa.com/",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.read().decode("utf-8", "replace")
+    except Exception as e:
+        log("    -> %s  (%s)" % (e, label))
+        return None
+
+
+def probe_scorers(log):
+    """The top-scorer page is drawn by JavaScript, so the numbers are not in the
+    HTML. But the HTML usually still names the address the data comes from -
+    and that is the part we need. No browser required."""
+    log("")
+    log("=" * 66)
+    log("Where the top-scorer numbers come from")
+    log("=" * 66)
+    log("")
+    log("  GET " + SCORER_PAGE)
+    html = get(SCORER_PAGE, log, "the top-scorer page")
+    if not html:
+        log("VERDICT: could not open the page. Copy this log into the chat.")
+        return
+    log("    -> %d characters of HTML" % len(html))
+
+    # any uefa.com address in the page that looks like a data feed
+    urls = set(re.findall(r'https?://[a-zA-Z0-9.\-]*uefa\.com/[^"\'\\\s<>)]+', html))
+    datay = sorted(u for u in urls if re.search(
+        r'(/v\d|api|stat|player|scorer|top|rank|comp\.|match)', u, re.I)
+        and not re.search(r'\.(png|jpg|jpeg|svg|gif|webp|css|woff2?|ico)(\?|$)', u, re.I))
+    log("")
+    log("-- uefa.com addresses in the page that look like data feeds (%d) --" % len(datay))
+    for u in datay[:40]:
+        log("   " + u[:150])
+    if not datay:
+        log("   none found that way.")
+
+    # some sites park the whole first page of data in the HTML
+    log("")
+    log("-- is the data parked in the page itself? --")
+    for marker in ("__NEXT_DATA__", "__NUXT__", "window.__INITIAL_STATE__", "application/ld+json"):
+        if marker in html:
+            i = html.find(marker)
+            log("   FOUND %s at character %d" % (marker, i))
+            chunk = html[i:i + 1200]
+            log("   " + re.sub(r"\s+", " ", chunk)[:600])
+        else:
+            log("   %s - not present" % marker)
+
+    # names of our clubs appearing in the HTML would mean real content is there
+    hits = [t for t in ALIASES if re.search(re.escape(t.split()[0]), html, re.I)]
+    log("")
+    log("   %d of 36 club names appear in the HTML (a high number means the" % len(hits))
+    log("   page carries real content, not just an empty shell)")
+    log("")
+    log("VERDICT: copy this whole log into the chat. The addresses above tell me")
+    log("whether top scorers can be had safely, or whether we leave them out.")
+
+
 # ---------------------------------------------------------------- the test
 def main():
-    md = int(sys.argv[1]) if len(sys.argv) > 1 else 3
+    arg = sys.argv[1] if len(sys.argv) > 1 else "3"
+    if str(arg).strip().lower().startswith("club"):
+        probe_clubs(print)
+        probe_scorers(print)
+        return
+    md = int(arg)
     checking = (md == 3)
     print("=" * 66)
     print("UEFA scraper test v3 - Matchday %d%s" % (md, "  (answers known)" if checking else ""))
