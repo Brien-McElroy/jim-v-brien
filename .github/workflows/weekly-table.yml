@@ -61,14 +61,28 @@ jobs:
       # above, so the commit has to come after them. With it before, the
       # stamps were thrown away at the end of every run and both games
       # emailed again the next day.
+      # One `git add` listing several files is ALL OR NOTHING: if any one of
+      # them does not exist, git stages none of them and the whole commit is
+      # silently skipped. UEFA_last_emailed.txt does not exist until the first
+      # Champions League email goes out, so every run was quietly saving
+      # nothing - which is why the same matchweek was emailed day after day.
+      # Adding them one at a time means a missing file costs only itself.
       - name: Save the results and what has been emailed
         run: |
           git config user.name "table-bot"
           git config user.email "table-bot@users.noreply.github.com"
-          git add tables/ PL_last_emailed.txt \
-                  UEFA_state.json UEFA_scorers.json UEFA_last_emailed.txt 2>/dev/null || true
-          git diff --cached --quiet || git commit -m "Results for $(date -u +%F)"
-          git push
+          for f in tables PL_last_emailed.txt \
+                   UEFA_state.json UEFA_scorers.json UEFA_last_emailed.txt; do
+            git add "$f" 2>/dev/null || echo "  (no $f this run - that is fine)"
+          done
+          if git diff --cached --quiet; then
+            echo "Nothing changed, nothing to commit."
+          else
+            echo "Committing:"
+            git diff --cached --name-only | sed 's/^/  /'
+            git commit -q -m "Results for $(date -u +%F)"
+            git push
+          fi
 
       - name: Upload Jim's page
         uses: actions/upload-pages-artifact@v3
