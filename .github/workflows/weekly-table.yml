@@ -71,8 +71,9 @@ jobs:
         run: |
           git config user.name "table-bot"
           git config user.email "table-bot@users.noreply.github.com"
-          for f in tables PL_last_emailed.txt \
-                   UEFA_state.json UEFA_scorers.json UEFA_last_emailed.txt; do
+          for f in tables PL_last_emailed.txt UEFA_state.json \
+                   UEFA_scorers.json UEFA_kickoffs.json \
+                   UEFA_last_emailed.txt UEFA_last_reminded.txt; do
             git add "$f" 2>/dev/null || echo "  (no $f this run - that is fine)"
           done
           if git diff --cached --quiet; then
@@ -101,6 +102,18 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
         run: python send_summary.py summary.txt "Premier League - Jim v Brien, Matchweek update"
+
+      # Three days before a matchday locks, one reminder to both players
+      # with the cut-off in UTC and in Pacific time.
+      - name: Email the picks reminder
+        if: hashFiles('UEFA_live.flag') != '' && hashFiles('UEFA_reminder.txt') != ''
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
+        run: python send_summary.py UEFA_reminder.txt "Champions League - picks close in 3 days"
 
       - name: Email the Champions League summary
         if: hashFiles('UEFA_live.flag') != '' && hashFiles('UEFA_email.txt') != ''
