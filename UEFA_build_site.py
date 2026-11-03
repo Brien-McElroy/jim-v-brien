@@ -10,6 +10,7 @@ import json, os, datetime, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, "UEFA_state.json")
 SCORERS = os.path.join(HERE, "UEFA_scorers.json")
+KICKOFFS = os.path.join(HERE, "UEFA_kickoffs.json")
 TPL = os.path.join(HERE, "UEFA_site_template.html")
 OUT_DIR = os.path.join(HERE, "site", "uefa")
 MARK = "<!--STATIC-->"
@@ -103,6 +104,164 @@ def bracket_points(state):
     return out
 
 
+def load_small(path):
+    """A small JSON file that may not exist yet. Never fatal."""
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            txt = f.read().strip()
+        return json.loads(txt) if txt else {}
+    except Exception as e:
+        print("Could not read %s (%s) - carrying on without it."
+              % (os.path.basename(path), e))
+        return {}
+
+
+def when_lines(dt):
+    """The same moment in the three clocks that matter to us.
+
+    Seattle and Vancouver are NOT the same any more. British Columbia
+    stopped changing its clocks in 2026 and now sits on UTC-7 all year,
+    while Washington still switches. So from November to March Vancouver
+    runs an hour ahead of Seattle, and only matches it in summer.
+
+    This reads the time zone database rather than working the rule out by
+    hand, so it keeps up if either place changes again. If the database on
+    the runner is too old to know about the British Columbia change, that
+    is detected and the known rule is used instead - better a hard-coded
+    right answer than a confidently wrong one.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+        sea = ZoneInfo("America/Los_Angeles")
+        van = ZoneInfo("America/Vancouver")
+        # Is this database current? On 1 Dec 2026 Vancouver must be UTC-7.
+        probe = datetime.datetime(2026, 12, 1, 12, tzinfo=datetime.timezone.utc)
+        stale = probe.astimezone(van).utcoffset() != datetime.timedelta(hours=-7)
+    except Exception:
+        sea = van = None
+        stale = True
+
+    if sea and not stale:
+        s_loc, v_loc = dt.astimezone(sea), dt.astimezone(van)
+        s_tag, v_tag = s_loc.tzname(), v_loc.tzname()
+    else:
+        # Washington: daylight time from the second Sunday in March to the
+        # first Sunday in November. British Columbia: UTC-7, no changes.
+        y = dt.year
+        mar = datetime.date(y, 3, 8); mar += datetime.timedelta(days=(6 - mar.weekday()) % 7)
+        nov = datetime.date(y, 11, 1); nov += datetime.timedelta(days=(6 - nov.weekday()) % 7)
+        daylight = mar <= dt.date() < nov
+        off = -7 if daylight else -8
+        s_loc = dt.astimezone(datetime.timezone(datetime.timedelta(hours=off)))
+        v_loc = dt.astimezone(datetime.timezone(datetime.timedelta(hours=-7)))
+        s_tag, v_tag = ("PDT" if daylight else "PST"), "PDT"
+
+    def pretty(d):
+        h = d.hour % 12 or 12
+        return "%s %2d:%02d %s" % (d.strftime("%a %d %b,"), h, d.minute,
+                                   "am" if d.hour < 12 else "pm")
+
+    def offset(d):
+        mins = int(d.utcoffset().total_seconds() // 60)
+        return "UTC%+d" % (mins // 60) if mins % 60 == 0 else "UTC%+d:%02d" % (mins // 60, abs(mins) % 60)
+
+    # The database calls British Columbia's new year-round offset "MST",
+    # which would read as Mountain and confuse everybody. Show the plain
+    # offset for Vancouver and keep PST/PDT for Seattle, where it is right.
+    if v_tag in ("MST", "MDT", "-07", "-08"):
+        v_tag = offset(v_loc)
+
+    same = s_loc.utcoffset() == v_loc.utcoffset()
+    lines = [
+        "  %s   UTC     how UEFA publishes it" % dt.strftime("%a %d %b, %H:%M"),
+        "  %s   %-6s Seattle" % (pretty(s_loc), s_tag),
+        "  %s   %-6s Vancouver" % (pretty(v_loc), v_tag),
+    ]
+    if same:
+        note = ("Seattle and Vancouver happen to read the same just now - they only "
+                "line up in summer, while Washington is on daylight time.")
+    else:
+        note = ("Vancouver is an hour ahead of Seattle. British Columbia stopped "
+                "changing its clocks in 2026 and stays on UTC-7 all year; "
+                "Washington still switches.")
+    return lines, note
+
+
+def write_reminder(fixtures, kickoffs, state, today):
+    """Three days before a matchday locks, remind both players once.
+
+    The stamp file is what stops it going out again the next day, the same
+    way the results email is stamped.
+    """
+    out = os.path.join(HERE, "UEFA_reminder.txt")
+    if os.path.exists(out):
+        os.remove(out)
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    nxt = None
+    for md in MDS:
+        if ("md%d" % md) in (state.get("results") or {}):
+            continue
+        iso = kickoffs.get("md%d" % md)
+        if not iso:
+            continue
+        ko = datetime.datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        if ko > now:
+            nxt = (md, ko)
+            break
+    if not nxt:
+        print("No upcoming matchday with a known kick-off; no reminder.")
+        return
+    md, ko = nxt
+
+    days = (ko.date() - now.date()).days
+    if days != 3:
+        print("Matchday %d locks in %d day(s); a reminder goes at 3. Nothing to send."
+              % (md, days))
+        return
+
+    stamp = os.path.join(HERE, "UEFA_last_reminded.txt")
+    prev = ""
+    if os.path.exists(stamp):
+        prev = open(stamp, encoding="utf-8").read().strip()
+    if prev == str(md):
+        print("Matchday %d has already been reminded about. Nothing to send." % md)
+        return
+
+    lines, note = when_lines(ko)
+    rows = (fixtures.get("future") or {}).get(str(md)) or []
+    dates = sorted({r[0] for r in rows})
+    def nice(d):
+        return datetime.date.fromisoformat(d).strftime("%a %d %b")
+    played = nice(dates[0]) if len(dates) == 1 else "%s and %s" % (nice(dates[0]), nice(dates[-1]))
+
+    body = [
+        "Matchday %d picks close in three days." % md,
+        "",
+        "The deadline is the first kick-off of the round:",
+        "",
+    ] + lines + [
+        "",
+        note,
+        "",
+        "The games are played %s." % played,
+        "",
+        "Make your picks here - Make picks tab, all 18, then Email these:",
+        LINK,
+        "",
+        "After that kick-off the page stops taking picks for Matchday %d." % md,
+    ]
+    with open(out, "w", encoding="utf-8") as f:
+        f.write("\n".join(body) + "\n")
+    with open(stamp, "w", encoding="utf-8") as f:
+        f.write(str(md))
+    print("\n".join(body))
+    print("")
+    print("Reminder written for Matchday %d." % md)
+
+
 def main():
     state = load_state()
     check(state)
@@ -130,12 +289,21 @@ def main():
     n = sum(len(v) for v in scorers.values() if isinstance(v, list))
     print("Goalscorers: %d goal(s) across %d matchday(s)." % (n, len(scorers)))
 
+    kickoffs = load_small(KICKOFFS)
+    write_reminder(fixtures, kickoffs, state, today)
+    if kickoffs:
+        print("Kick-off times known for %d matchday(s)." % len(kickoffs))
+    else:
+        print("No kick-off times yet; the page will fall back to midnight UTC.")
+
     inject = ("<script>window.STATIC_MODE=true;window.STATIC_DATE=%s;"
-              "window.STATIC_DATA=%s;window.STATIC_SCORERS=%s;</script>"
+              "window.STATIC_DATA=%s;window.STATIC_SCORERS=%s;"
+              "window.KICKOFF=%s;</script>"
               % (json.dumps(today), json.dumps({"picks": state["picks"],
                                                 "results": state["results"],
                                                 "bracket": state.get("bracket") or {}}),
-                 json.dumps(scorers, ensure_ascii=False)))
+                 json.dumps(scorers, ensure_ascii=False),
+                 json.dumps(kickoffs)))
     os.makedirs(OUT_DIR, exist_ok=True)
     with open(os.path.join(OUT_DIR, "index.html"), "w", encoding="utf-8") as f:
         f.write(tpl.replace(MARK, inject))

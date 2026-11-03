@@ -16,6 +16,7 @@ import datetime, json, os, re, sys, unicodedata, urllib.request, urllib.error
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, "UEFA_state.json")
 SCORERS = os.path.join(HERE, "UEFA_scorers.json")
+KICKOFFS = os.path.join(HERE, "UEFA_kickoffs.json")
 FIXTURES = os.path.join(HERE, "UEFA_fixtures.json")
 FEED = ("https://match.uefa.com/v5/matches"
         "?competitionId=1&seasonYear=2027&phase=ALL"
@@ -188,7 +189,17 @@ def scorers_of(m):
     return out
 
 
-def read_date(d, want_scorers=False):
+def kickoff_of(m):
+    """When this match actually starts, as UEFA gives it."""
+    k = m.get("kickOffTime")
+    if isinstance(k, dict):
+        v = k.get("dateTime")
+        if isinstance(v, str) and len(v) >= 19:
+            return v
+    return None
+
+
+def read_date(d, want_scorers=False, want_kickoffs=False):
     url = FEED.format(d=d)
     req = urllib.request.Request(url, headers={
         "Accept": "application/json",
@@ -212,7 +223,9 @@ def read_date(d, want_scorers=False):
                     continue
                 hg, ag = goals(m)
                 val = None if hg is None or ag is None else (int(hg), int(ag))
-                if want_scorers:
+                if want_kickoffs:
+                    out[(H, A)] = kickoff_of(m)
+                elif want_scorers:
                     out[(H, A)] = (val, scorers_of(m))
                 else:
                     out[(H, A)] = val
@@ -237,6 +250,47 @@ def dates_of(fx, md):
     """Which dates a matchday is played on, whether it is past or future."""
     rows = (fx.get("played") or {}).get(str(md)) or (fx.get("future") or {}).get(str(md))
     return (sorted({r[0] for r in rows}) if rows else [])
+
+
+def fill_kickoffs(fx, today):
+    """Record when each matchday actually starts.
+
+    The page used to lock picks at midnight UTC on the first day, which is
+    four in the afternoon the day before in Seattle - so an evening of
+    picking was lost every round. With the real kick-off stored, it locks
+    when the football starts and not before.
+
+    Kick-off times are published well ahead, so this fills in once per
+    matchday and then costs nothing.
+    """
+    ko = load_json(KICKOFFS, {}) or {}
+    want = [md for md in range(1, 9) if ("md%d" % md) not in ko]
+    if not want:
+        return False
+    changed = False
+    for md in want:
+        dates = dates_of(fx, md)
+        if not dates:
+            continue
+        times = []
+        try:
+            for d in dates:
+                for v in read_date(d, want_kickoffs=True).values():
+                    if v:
+                        times.append(v)
+        except Exception as e:
+            print("  could not read the kick-off times for Matchday %d (%s)." % (md, e))
+            continue
+        if not times:
+            continue
+        ko["md%d" % md] = min(times)
+        changed = True
+        print("  Matchday %d first kicks off %s" % (md, min(times)))
+    if changed:
+        with open(KICKOFFS, "w", encoding="utf-8") as f:
+            json.dump(ko, f, separators=(",", ":"), sort_keys=True)
+        print("Wrote %s" % os.path.basename(KICKOFFS))
+    return changed
 
 
 def fill_scorers(fx, state, today):
@@ -301,6 +355,9 @@ def main():
 
     # Catch up on goalscorers for anything already scored. Silent and free
     # once it has been done; this is also what backfills Matchdays 1 to 3.
+    print("Checking the kick-off times are known.")
+    fill_kickoffs(fx, today)
+
     print("Checking the goalscorers are up to date.")
     fill_scorers(fx, state, today)
 

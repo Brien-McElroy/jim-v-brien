@@ -149,6 +149,26 @@ ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
 .cmp .who-j{color:var(--jim);font-weight:700}
 .cmp .hit::after{content:" \2713";color:var(--good)}
 .cmp .res{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+/* The two pick columns are equal width and left-aligned, so the names form
+   two clean vertical lines instead of drifting with the match name. */
+.cmp{table-layout:fixed}
+.cmp th:first-child,.cmp td:first-child{width:42%}
+.cmp .pk-h,.cmp .pk-c{width:29%;text-align:left;padding-left:12px}
+.cmp th.pk-h{font-weight:800}
+.cmp th.pk-h.b{color:var(--brien)} .cmp th.pk-h.j{color:var(--jim)}
+.cmp td.pk-c{border-left:1px solid var(--line)}
+.cmp th.pk-h{border-left:1px solid var(--line)}
+@media (max-width:620px){
+  .cmp th:first-child,.cmp td:first-child{width:38%}
+  .cmp .pk-h,.cmp .pk-c{width:31%;padding-left:8px}
+}
+/* the three facts above the table */
+.facts{display:grid;gap:7px}
+.facts>div{display:grid;grid-template-columns:118px 1fr;gap:10px;align-items:baseline}
+.facts span{font:700 10.5px var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.facts b{font-size:13.5px;font-weight:600}
+.facts b.ok{color:var(--accent)}
+@media (max-width:520px){.facts>div{grid-template-columns:1fr;gap:1px}}
 @media (max-width:520px){.cmp td,.cmp th{padding:7px 3px;font-size:13px}}
 .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:17px;font-weight:700;letter-spacing:.06em;
   word-break:break-all;background:var(--bg);border:1px dashed var(--gold);border-radius:9px;padding:13px;
@@ -486,7 +506,10 @@ function resultsFor(md){
 function hasResults(md){return !!resultsFor(md)}
 function isOpen(md){ // picks still being accepted
   if(hasResults(md))return false;
-  return TODAY<new Date(mdOpens(md)+"T00:00:00Z");
+  // Locks at the real first kick-off when we know it. Before, it locked at
+  // midnight UTC, which is four in the afternoon the day before in Seattle -
+  // so a whole evening of picking was being lost.
+  return TODAY<lockAt(md);
 }
 function lastDone(){var l=0;ALLMD.forEach(function(m){if(hasResults(m))l=m});return l}
 function nextOpen(){var n=0;MDS.forEach(function(m){if(!n&&isOpen(m))n=m});return n}
@@ -496,11 +519,11 @@ function daysTo(iso){
 }
 function deadlineNote(){
   var n=nextOpen(); if(!n)return null;
-  var d=mdOpens(n),left=daysTo(d);
-  return {md:n,date:fmt2(d),left:left,
+  var d=lockAt(n),iso=d.toISOString().slice(0,10),left=daysTo(iso);
+  return {md:n,date:lockLabel(n),left:left,
           urgent:left<=3,
           text:"Picks for Matchday "+n+" close "+(left===0?"TODAY":left===1?"TOMORROW":("in "+left+" days"))+
-               " · "+fmt2(d)};
+               " · "+lockLabel(n)};
 }
 function fmt2(iso){
   var p=iso.split("-"),dw=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -1035,6 +1058,23 @@ function myMessage(md){
   return L.join("\n")+"\n";
 }
 
+/* When a matchday stopped taking picks, in words, in the reader's own
+   clock. The page locks on the first kick-off; before we knew the real
+   kick-off time that was midnight UTC, which is the afternoon before in
+   Seattle - so this says the actual moment rather than just a date. */
+function lockAt(md){
+  var k=(window.KICKOFF||{})["md"+md];
+  return new Date(k || (mdOpens(md)+"T00:00:00Z"));
+}
+function hasKicked(md){return TODAY>=lockAt(md)}
+function lockLabel(md){
+  var d=lockAt(md);
+  try{
+    return d.toLocaleString(undefined,{weekday:"long",day:"numeric",month:"short",
+      year:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"});
+  }catch(e){ return fmt2(d.toISOString().slice(0,10)) }
+}
+
 /* Both players' picks, side by side. Only shown once a matchday is locked
    or scored, so neither can see the other's hand before kick-off. */
 var cmpMd=null;
@@ -1057,18 +1097,30 @@ function bothPicksView(){
     h+='<p class="note warn">No picks were saved for Matchday '+cmpMd+'.</p>';
     return h;
   }
-  h+='<p class="muted small" style="margin:0">'+esc(mdDateLabel(cmpMd))+(rs?' \u00b7 scored':' \u00b7 locked, not played yet')+'</p>';
-  h+='<div class="scroll"><table class="cmp"><thead><tr><th>Match</th><th>Brien</th><th>Jim</th>'+(rs?'<th>Result</th>':'')+'</tr></thead><tbody>';
+  /* Say plainly which matchday this is, when it stopped taking picks, and
+     when the games are played - three different things that were all being
+     carried by one date range before. */
+  h+='<section class="card" style="padding:13px 15px">'+
+     '<h2 style="margin:0 0 7px">Matchday '+cmpMd+' picks</h2>'+
+     '<div class="facts">'+
+     '<div><span>Picks closed</span><b>'+esc(lockLabel(cmpMd))+'</b></div>'+
+     '<div><span>Games played</span><b>'+esc(mdDateLabel(cmpMd))+'</b></div>'+
+     '<div><span>Status</span><b class="'+(rs?'ok':'')+'">'+
+       (rs?'Scored':(hasKicked(cmpMd)?'Played, waiting on the scores':'Locked, not played yet'))+
+     '</b></div></div></section>';
+  h+='<div class="scroll"><table class="cmp"><thead><tr><th>Match</th>'+
+     '<th class="pk-h b">Brien\u2019s pick</th><th class="pk-h j">Jim\u2019s pick</th>'+
+     (rs?'<th>Result</th>':'')+'</tr></thead><tbody>';
   f.forEach(function(m,i){
     var hw=rs?(rs[i][0]>rs[i][1]):null, aw=rs?(rs[i][1]>rs[i][0]):null, drew=rs?(rs[i][0]===rs[i][1]):false;
     /* Every pick says plainly what it was worth: 2 for the right winner,
        1 each when the match was drawn, nothing otherwise. */
     function cell(pk,cls){
-      if(!pk)return '<td class="muted">\u2014</td>';
+      if(!pk)return '<td class="pk-c muted">\u2014</td>';
       var t=(pk==="H"?m.h:m.a), right=rs&&!drew&&((pk==="H"&&hw)||(pk==="A"&&aw));
       var tag='';
       if(rs)tag=' <span class="sc '+(right?"g2":drew?"g1":"g0")+'">'+(right?"+2":drew?"+1":"0")+'</span>';
-      return '<td class="'+cls+(right?" hit":"")+'">'+esc(nm(t))+tag+'</td>';
+      return '<td class="pk-c '+cls+(right?" hit":"")+'">'+esc(nm(t))+tag+'</td>';
     }
     h+='<tr><td class="fx">'+esc(nm(m.h))+' <span class="muted">v</span> '+esc(nm(m.a))+'</td>'+
        cell(bp[i],"who-b")+cell(jp[i],"who-j")+
@@ -1241,7 +1293,7 @@ function render(){
   document.getElementById("mwlabel").textContent=done>=4?("Matchday "+done):"Matchday 4 next";
   document.getElementById("mwdate").textContent=done>=4
     ? ("scored · "+(nx?("Matchday "+nx+" on "+mdDateLabel(nx)):"that is the lot — champion crowned"))
-    : ("picks close "+fmtDate(mdOpens(4)));
+    : ("picks close "+lockLabel(4));
   document.getElementById("mastsub").textContent=(seasonDone()?"Matchdays 4-8 · complete":"Matchdays 4-8 · for fun")+(STATIC?" · read only":"");
   var v={results:resultsView,picks:picksView,makepicks:makePicksView,both:bothPicksView,
          readmsg:readMsgView,table:tableView,bracket:bracketView,update:updateView,
