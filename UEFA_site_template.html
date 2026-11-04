@@ -482,7 +482,10 @@ if(STATIC&&window.STATIC_DATA)S=window.STATIC_DATA;
   if(!S.bracket.picks.jim)S.bracket.picks.jim={};
 })();
 var DB=null, who="brien", tab="results", upMd=4, codeFlash=null;
-var TODAY=(window.STATIC_DATE?new Date(window.STATIC_DATE+"T12:00:00Z"):new Date());
+/* Always the viewer's real clock. The read-only page used to freeze "now" at
+   noon UTC on the day it was built, so on a matchday's first day it still
+   thought picks were open hours after kick-off and kept them covered. */
+var TODAY=new Date();
 
 /* ---------- fixtures ---------- */
 function fixtures(md){
