@@ -147,7 +147,16 @@ ul.plain{margin:6px 0 0;padding-left:20px;display:grid;gap:7px}
 .cmp .fx{font-weight:600}
 .cmp .who-b{color:var(--brien);font-weight:700}
 .cmp .who-j{color:var(--jim);font-weight:700}
-.cmp .hit::after{content:" \2713";color:var(--good)}
+.cmp td.hit .pkbox::after{content:"\2713";color:var(--good);font-weight:800;margin-left:1px}
+/* Each pick sits in its own tinted box: green where the winner was called
+   right, amber where the match was drawn and both of us took a point,
+   plain where it was a miss. */
+.pkbox{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;
+  border-radius:8px;line-height:1.3}
+.pkbox.w{background:rgba(91,228,155,.13);box-shadow:inset 0 0 0 1px rgba(91,228,155,.38)}
+.pkbox.d{background:rgba(255,211,110,.13);box-shadow:inset 0 0 0 1px rgba(255,211,110,.38)}
+.pkbox.l{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);opacity:.72}
+.cmp td.pk-c{padding-top:5px;padding-bottom:5px}
 .cmp .res{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
 /* The two pick columns are equal width and left-aligned, so the names form
    two clean vertical lines instead of drifting with the match name. */
@@ -482,10 +491,7 @@ if(STATIC&&window.STATIC_DATA)S=window.STATIC_DATA;
   if(!S.bracket.picks.jim)S.bracket.picks.jim={};
 })();
 var DB=null, who="brien", tab="results", upMd=4, codeFlash=null;
-/* Always the viewer's real clock. The read-only page used to freeze "now" at
-   noon UTC on the day it was built, so on a matchday's first day it still
-   thought picks were open hours after kick-off and kept them covered. */
-var TODAY=new Date();
+var TODAY=(window.STATIC_DATE?new Date(window.STATIC_DATE+"T12:00:00Z"):new Date());
 
 /* ---------- fixtures ---------- */
 function fixtures(md){
@@ -695,7 +701,6 @@ function resultsView(){
   if(!started){
     h+='<p class="note">No betting matchdays have been scored yet. Matchday 4 on '+esc(mdDateLabel(4))+' is the first one that counts.</p>';
   }else{
-    var v;
     if(seasonDone()){
       h+='<section class="card" style="border-color:var(--gold);text-align:center">'+
          '<div style="font-size:44px;line-height:1">♛</div>'+
@@ -705,11 +710,9 @@ function resultsView(){
                     :"All eight matchdays done and dead level.")+'</p>'+
          '<p class="muted small" style="margin:10px 0 0">Played for fun. Want to carry on? The knockout bracket is on the Bracket tab, scored on its own.</p></section>';
     }else{
-      if(L.who===null)v="Dead level.";
-      else if(L.tie)v=cap(L.who)+" leads on goal difference.";
-      else v=cap(L.who)+" leads by "+L.by+" point"+(L.by===1?"":"s")+".";
-      h+='<p class="verdict">'+esc(v)+'</p>';
-      h+='<p class="muted small" style="margin:-10px 0 0">Scored through Matchday '+done+'. Next: Matchday '+(done+1)+', '+esc(mdDateLabel(done+1))+'.</p>';
+      /* Who leads is in the top line and on the scoreboard already, so this
+         just says where the season has got to. */
+      h+='<p class="muted small" style="margin:0">Scored through Matchday '+done+'. Next: Matchday '+(done+1)+', '+esc(mdDateLabel(done+1))+'.</p>';
     }
   }
   if(started){
@@ -1123,7 +1126,12 @@ function bothPicksView(){
       var t=(pk==="H"?m.h:m.a), right=rs&&!drew&&((pk==="H"&&hw)||(pk==="A"&&aw));
       var tag='';
       if(rs)tag=' <span class="sc '+(right?"g2":drew?"g1":"g0")+'">'+(right?"+2":drew?"+1":"0")+'</span>';
-      return '<td class="pk-c '+cls+(right?" hit":"")+'">'+esc(nm(t))+tag+'</td>';
+      /* Boxed and tinted so a glance down the column tells you how each of
+         us did: green for a winner called right, amber for a drawn match
+         where we both took a point, nothing at all for a miss. */
+      var box=rs?(right?" w":drew?" d":" l"):"";
+      return '<td class="pk-c '+cls+(right?" hit":"")+'">'+
+             '<span class="pkbox'+box+'">'+esc(nm(t))+tag+'</span></td>';
     }
     h+='<tr><td class="fx">'+esc(nm(m.h))+' <span class="muted">v</span> '+esc(nm(m.a))+'</td>'+
        cell(bp[i],"who-b")+cell(jp[i],"who-j")+
@@ -1294,8 +1302,16 @@ function render(){
   tb.innerHTML=TABS.map(function(t){return '<button role="tab" data-tab="'+t[0]+'" aria-selected="'+(tab===t[0])+'">'+t[1]+'</button>'}).join("");
   var done=lastDone(),nx=0;MDS.forEach(function(m){if(!nx&&!hasResults(m))nx=m});
   document.getElementById("mwlabel").textContent=done>=4?("Matchday "+done):"Matchday 4 next";
+  /* Who is ahead, right in the top line, so it is the first thing read
+     rather than something you go looking for further down. */
+  var who="";
+  if(done>=4){
+    var L0=leaderInfo();
+    who = L0.who===null ? "level · "
+        : (cap(L0.who)+(L0.tie?" leads on goal difference":" leads by "+L0.by)+" · ");
+  }
   document.getElementById("mwdate").textContent=done>=4
-    ? ("scored · "+(nx?("Matchday "+nx+" on "+mdDateLabel(nx)):"that is the lot — champion crowned"))
+    ? ("scored · "+who+(nx?("Matchday "+nx+" on "+mdDateLabel(nx)):"that is the lot — champion crowned"))
     : ("picks close "+lockLabel(4));
   document.getElementById("mastsub").textContent=(seasonDone()?"Matchdays 4-8 · complete":"Matchdays 4-8 · for fun")+(STATIC?" · read only":"");
   var v={results:resultsView,picks:picksView,makepicks:makePicksView,both:bothPicksView,
