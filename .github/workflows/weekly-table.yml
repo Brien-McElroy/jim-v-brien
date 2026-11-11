@@ -5,6 +5,9 @@
 #   UEFA_live.flag exists in the repo. Create that file when Jim says yes;
 #   until then this workflow behaves exactly as it did before.
 #
+# Only the Premier League half needs a browser. If the browser will not
+# install, that half is skipped for the day and everything else still runs.
+#
 # Both games publish to the same GitHub Pages site, which is why they share
 # one job - two workflows deploying would overwrite each other.
 #   Premier League  ->  site/index.html
@@ -31,14 +34,43 @@ jobs:
         with:
           python-version: "3.12"
 
+      # The browser is only needed to read the Premier League table.
+      #
+      # `--with-deps` used to be on the second line. It makes playwright run
+      # apt first, and on 11 Nov 2026 GitHub's runner could not reach Ubuntu's
+      # package servers, so the whole job died ten minutes in and neither game
+      # ran. The only packages apt wanted were nine FONT packages - Chinese,
+      # Japanese, Cyrillic, emoji - which this job has never needed; every
+      # real library is already on the runner image. So it is gone.
+      #
+      # If the download itself hiccups, try once more before giving up.
       - name: Install browser
+        id: browser
+        continue-on-error: true
         run: |
           pip install playwright==1.48.0
-          playwright install --with-deps chromium
+          playwright install chromium || {
+            echo "That did not take. Waiting 20 seconds and trying once more."
+            sleep 20
+            playwright install chromium
+          }
 
       # ---------------- Premier League ----------------
+      # Only this step needs the browser. If it could not be installed, skip
+      # reading the table and carry on - the Champions League half reads
+      # UEFA's feed directly and does not need a browser at all. Losing one
+      # day of the table costs nothing; losing the whole job might.
       - name: Fetch table
+        if: steps.browser.outcome == 'success'
         run: python fetch_table.py
+
+      - name: Say why the table was skipped
+        if: steps.browser.outcome != 'success'
+        run: |
+          echo "::warning::The browser would not install, so the Premier League table was not read today. The Champions League half still ran. Nothing is lost - tomorrow picks it up."
+          echo "The browser would not install, so the table was not read today."
+          echo "Everything below still runs, including the Champions League."
+          echo "Nothing is lost: the next run reads the table again."
 
       # ---------------- Champions League ----------------
       # Reads UEFA's feed directly, no browser. Finishes quietly unless the
