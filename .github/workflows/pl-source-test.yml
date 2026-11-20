@@ -25,6 +25,7 @@ on:
           - bbc
           - fbref
           - shape
+          - live
 
 jobs:
   probe:
@@ -65,6 +66,37 @@ jobs:
                      "Newcastle", "Tottenham", "Brentford", "Fulham"]
             found = [c for c in clubs if c in body]
             return found
+
+          if WHICH == "live":
+            base = "https://footballapi.pulselive.com/football"
+            hd = dict(HEAD); hd["Origin"] = "https://www.premierleague.com"
+            hd["Referer"] = "https://www.premierleague.com/"
+            def get(u):
+              return json.loads(urllib.request.urlopen(
+                  urllib.request.Request(u, headers=hd), timeout=45).read())
+
+            print("=" * 68); print("SEASONS this API knows about"); print("=" * 68)
+            ss = get(base + "/competitions/1/compseasons?page=0&pageSize=40")
+            seasons = ss.get("content") or ss
+            pick = None
+            for c in seasons[:8]:
+              print("   id=%-6s  %s" % (c.get("id"), c.get("label")))
+              if "2026/27" in str(c.get("label")): pick = c
+            if pick is None: pick = seasons[0]
+            print()
+            print("   USING -> id=%s  %s" % (pick.get("id"), pick.get("label")))
+
+            print(); print("=" * 68); print("THE TABLE, as the job would save it"); print("=" * 68)
+            d = get(base + "/standings?compSeasons=%s&altIds=true&detail=2" % pick.get("id"))
+            t = d["tables"][0]
+            print("   gameWeek reported:", t.get("gameWeek"))
+            print()
+            print("position,team,played,points")
+            for e in t["entries"]:
+              o = e["overall"]
+              print("%s,%s,%s,%s" % (e["position"], e["team"]["name"],
+                                     o["played"], o["points"]))
+            raise SystemExit(0)
 
           if WHICH == "shape":
             import pprint
