@@ -216,10 +216,16 @@ def write_reminder(fixtures, kickoffs, state, today):
         return
     md, ko = nxt
 
+    # This used to read `if days != 3`, meaning the reminder had exactly one
+    # chance to go out. On 19 Nov 2026 the daily job died on a blocked
+    # premierleague.com, and a failure on the wrong day would have lost a
+    # reminder for good. The stamp below already stops it repeating, so
+    # "three days or fewer, if it has not gone yet" is safe and survives a
+    # missed day.
     days = (ko.date() - now.date()).days
-    if days != 3:
-        print("Matchday %d locks in %d day(s); a reminder goes at 3. Nothing to send."
-              % (md, days))
+    if days > 3:
+        print("Matchday %d locks in %d day(s); a reminder goes at 3 days or fewer. "
+              "Nothing to send." % (md, days))
         return
 
     stamp = os.path.join(HERE, "UEFA_last_reminded.txt")
@@ -237,8 +243,14 @@ def write_reminder(fixtures, kickoffs, state, today):
         return datetime.date.fromisoformat(d).strftime("%a %d %b")
     played = nice(dates[0]) if len(dates) == 1 else "%s and %s" % (nice(dates[0]), nice(dates[-1]))
 
+    # Normally this goes out at three days. If the job missed that day, it
+    # goes out late rather than not at all, so the wording has to follow the
+    # real number of days instead of always saying "three".
+    howlong = {3: "in three days", 2: "in two days",
+               1: "tomorrow", 0: "TODAY"}.get(days, "in %d days" % days)
+
     body = [
-        "Matchday %d picks close in three days." % md,
+        "Matchday %d picks close %s." % (md, howlong),
         "",
         "The deadline is the first kick-off of the round:",
         "",
