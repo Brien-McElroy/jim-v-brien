@@ -24,6 +24,7 @@ on:
           - espn
           - bbc
           - fbref
+          - shape
 
 jobs:
   probe:
@@ -64,6 +65,24 @@ jobs:
                      "Newcastle", "Tottenham", "Brentford", "Fulham"]
             found = [c for c in clubs if c in body]
             return found
+
+          if WHICH == "shape":
+            import pprint
+            for nm, u in [("pulselive", SOURCES[1][1]), ("espn", SOURCES[2][1])]:
+              rq = urllib.request.Request(u, headers=dict(HEAD))
+              if nm == "pulselive":
+                rq.add_header("Origin", "https://www.premierleague.com")
+                rq.add_header("Referer", "https://www.premierleague.com/")
+              d = json.loads(urllib.request.urlopen(rq, timeout=45).read())
+              print("=" * 68); print(nm.upper(), "- first entry, in full"); print("=" * 68)
+              if nm == "pulselive":
+                print("gameWeek:", d["tables"][0].get("gameWeek"))
+                e = d["tables"][0]["entries"][0]
+              else:
+                e = d["children"][0]["standings"]["entries"][0]
+              pprint.pprint(e, width=100, depth=4)
+              print()
+            raise SystemExit(0)
 
           for name, url in SOURCES:
             if WHICH != "all" and WHICH != name:
