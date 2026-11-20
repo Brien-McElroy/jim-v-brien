@@ -69,9 +69,11 @@ jobs:
       # picks reminder with it. Nothing below here depends on today's table:
       # build_site.py reads whatever is already in tables/. So a bad day for
       # the Premier League must cost the Premier League and nothing else.
+      # No `if:` on this step any more. Since 19 Nov 2026 fetch_table.py reads
+      # the table from ESPN as plain JSON and only falls back to the browser,
+      # so it is worth running even when the browser did not install.
       - name: Fetch table
         id: table
-        if: steps.browser.outcome == 'success'
         continue-on-error: true
         run: python fetch_table.py
 
