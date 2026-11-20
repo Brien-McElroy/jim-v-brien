@@ -26,6 +26,7 @@ on:
           - fbref
           - shape
           - live
+          - live2
 
 jobs:
   probe:
@@ -66,6 +67,53 @@ jobs:
                      "Newcastle", "Tottenham", "Brentford", "Fulham"]
             found = [c for c in clubs if c in body]
             return found
+
+          if WHICH == "live2":
+            base = "https://footballapi.pulselive.com/football"
+            hd = dict(HEAD); hd["Origin"] = "https://www.premierleague.com"
+            hd["Referer"] = "https://www.premierleague.com/"
+            def tryget(u, h):
+              try:
+                return json.loads(urllib.request.urlopen(
+                    urllib.request.Request(u, headers=h), timeout=45).read())
+              except Exception as ex:
+                print("     failed:", type(ex).__name__, ex); return None
+
+            print("=" * 68); print("PULSELIVE - four ways to ask for season 841"); print("=" * 68)
+            for label, u in [
+              ("plain",        base + "/standings?compSeasons=841&altIds=true&detail=2"),
+              ("live=true",    base + "/standings?compSeasons=841&altIds=true&detail=2&live=true"),
+              ("compseasons/", base + "/compseasons/841/standings?altIds=true&detail=2"),
+              ("paged",        base + "/standings?compSeasons=841&altIds=true&detail=2&page=0&pageSize=20"),
+            ]:
+              print("  ", label)
+              d = tryget(u, hd)
+              if d:
+                tb = (d.get("tables") or [{}])[0]
+                print("     gameWeek=%s  entries=%d" % (tb.get("gameWeek"), len(tb.get("entries") or [])))
+
+            print(); print("=" * 68); print("ESPN - the table it actually has"); print("=" * 68)
+            d = tryget("https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings", dict(HEAD))
+            if d:
+              print("   season:", json.dumps(d.get("season"))[:160])
+              st = d["children"][0]["standings"]
+              print("   seasonDisplayName:", st.get("seasonDisplayName"))
+              ent = st["entries"]
+              print("   entries:", len(ent))
+              print("   stat names available:", [x.get("name") for x in ent[0]["stats"]])
+              print()
+              print("position,team,played,points")
+              rows = []
+              for e in ent:
+                st2 = {x.get("name"): x for x in e["stats"]}
+                def val(k):
+                  v = st2.get(k, {})
+                  return v.get("value", v.get("displayValue"))
+                rows.append((val("rank"), e["team"].get("displayName"),
+                             val("gamesPlayed"), val("points")))
+              for r in sorted(rows, key=lambda r: (r[0] if r[0] is not None else 99)):
+                print("%s,%s,%s,%s" % tuple(int(x) if isinstance(x,float) else x for x in r))
+            raise SystemExit(0)
 
           if WHICH == "live":
             base = "https://footballapi.pulselive.com/football"
