@@ -1,174 +1,127 @@
-# Runs once a day and does nothing most days.
+# A one-off test. It changes nothing and emails nobody.
 #
-# Premier League: unchanged from what has been working.
-# Champions League: every UEFA step is skipped unless a file called
-#   UEFA_live.flag exists in the repo. Create that file when Jim says yes;
-#   until then this workflow behaves exactly as it did before.
+# premierleague.com started answering GitHub's servers with
+# "403 Request blocked" (CloudFront), so the table cannot be read the way it
+# has been. This tries five other places the same table lives and prints what
+# each one says, so we can see which ones GitHub is allowed to read.
 #
-# Only the Premier League half needs a browser. If the browser will not
-# install, that half is skipped for the day and everything else still runs.
-#
-# Both games publish to the same GitHub Pages site, which is why they share
-# one job - two workflows deploying would overwrite each other.
-#   Premier League  ->  site/index.html
-#   Champions League -> site/uefa/index.html
-name: Weekly Premier League table
+# Run it from the Actions tab: pick "Test where the table can be read",
+# press "Run workflow", leave the box on "all", press the green button.
+# Then open the run and read the "Try each source" step.
+name: Test where the table can be read
 
 on:
-  schedule:
-    - cron: "0 14 * * *"
   workflow_dispatch:
-
-permissions:
-  contents: write
-  actions: write
-  pages: write
-  id-token: write
+    inputs:
+      which:
+        description: Which source to try
+        type: choice
+        default: all
+        options:
+          - all
+          - premierleague
+          - pulselive
+          - espn
+          - bbc
+          - fbref
 
 jobs:
-  fetch:
+  probe:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # The browser is only needed to read the Premier League table.
-      #
-      # `--with-deps` used to be on the second line. It makes playwright run
-      # apt first, and on 11 Nov 2026 GitHub's runner could not reach Ubuntu's
-      # package servers, so the whole job died ten minutes in and neither game
-      # ran. The only packages apt wanted were nine FONT packages - Chinese,
-      # Japanese, Cyrillic, emoji - which this job has never needed; every
-      # real library is already on the runner image. So it is gone.
-      #
-      # If the download itself hiccups, try once more before giving up.
-      - name: Install browser
-        id: browser
-        continue-on-error: true
+      - name: Try each source
         run: |
-          pip install playwright==1.48.0
-          playwright install chromium || {
-            echo "That did not take. Waiting 20 seconds and trying once more."
-            sleep 20
-            playwright install chromium
+          python - <<'PY'
+          print("BUILD 2026-11-19a")
+          import urllib.request, urllib.error, json, re
+
+          WHICH = "${{ inputs.which }}"
+
+          SOURCES = [
+            ("premierleague", "https://www.premierleague.com/tables"),
+            ("pulselive",     "https://footballapi.pulselive.com/football/standings"
+                              "?compSeasons=777&altIds=true&detail=2&FOOTBALL_COMPETITION=1"),
+            ("espn",          "https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings"),
+            ("bbc",           "https://www.bbc.com/sport/football/premier-league/table"),
+            ("fbref",         "https://fbref.com/en/comps/9/Premier-League-Stats"),
+          ]
+
+          HEAD = {
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                           "Chrome/131.0.0.0 Safari/537.36"),
+            "Accept": "*/*",
+            "Accept-Language": "en-GB,en;q=0.9",
           }
 
-      # ---------------- Premier League ----------------
-      # Only this step needs the browser. If it could not be installed, skip
-      # reading the table and carry on - the Champions League half reads
-      # UEFA's feed directly and does not need a browser at all. Losing one
-      # day of the table costs nothing; losing the whole job might.
-      - name: Fetch table
-        if: steps.browser.outcome == 'success'
-        run: python fetch_table.py
+          def looks_like_a_table(body):
+            """Say whether the 20 clubs and some numbers are actually in there."""
+            clubs = ["Arsenal", "Liverpool", "Chelsea", "Everton",
+                     "Newcastle", "Tottenham", "Brentford", "Fulham"]
+            found = [c for c in clubs if c in body]
+            return found
 
-      - name: Say why the table was skipped
-        if: steps.browser.outcome != 'success'
-        run: |
-          echo "::warning::The browser would not install, so the Premier League table was not read today. The Champions League half still ran. Nothing is lost - tomorrow picks it up."
-          echo "The browser would not install, so the table was not read today."
-          echo "Everything below still runs, including the Champions League."
-          echo "Nothing is lost: the next run reads the table again."
+          for name, url in SOURCES:
+            if WHICH != "all" and WHICH != name:
+              continue
+            print()
+            print("=" * 68)
+            print(name.upper(), "->", url[:90])
+            print("=" * 68)
+            req = urllib.request.Request(url, headers=dict(HEAD))
+            if name == "pulselive":
+              req.add_header("Origin", "https://www.premierleague.com")
+              req.add_header("Referer", "https://www.premierleague.com/")
+            try:
+              with urllib.request.urlopen(req, timeout=45) as r:
+                code = r.status
+                ctype = r.headers.get("Content-Type", "?")
+                raw = r.read(400000)
+            except urllib.error.HTTPError as e:
+              body = ""
+              try:
+                body = e.read(600).decode("utf-8", "replace")
+              except Exception:
+                pass
+              print("  BLOCKED. HTTP", e.code, e.reason)
+              print("  the site said:", " ".join(body.split())[:300])
+              continue
+            except Exception as e:
+              print("  FAILED to connect:", type(e).__name__, e)
+              continue
 
-      # ---------------- Champions League ----------------
-      # Reads UEFA's feed directly, no browser. Finishes quietly unless the
-      # next unscored matchday is complete.
-      - name: Fetch Champions League results
-        if: hashFiles('UEFA_live.flag') != ''
-        run: python UEFA_fetch_results.py
+            body = raw.decode("utf-8", "replace")
+            print("  OK. HTTP", code, "|", ctype, "|", len(raw), "bytes")
 
-      - name: Build Jim's page
-        run: python build_site.py
+            clubs = looks_like_a_table(body)
+            print("  clubs visible in the response:", ", ".join(clubs) if clubs else "NONE")
 
-      - name: Build the Champions League page
-        if: hashFiles('UEFA_live.flag') != ''
-        run: python UEFA_build_site.py
+            if "json" in ctype or body.lstrip()[:1] in "{[":
+              try:
+                d = json.loads(body)
+                def shape(o, path="", depth=0):
+                  if depth > 3: return
+                  if isinstance(o, dict):
+                    for k in list(o)[:12]:
+                      print("    ", path + "." + k, "=", type(o[k]).__name__,
+                            ("(%d)" % len(o[k])) if isinstance(o[k], (list, dict)) else "")
+                      shape(o[k], path + "." + k, depth + 1)
+                  elif isinstance(o, list) and o:
+                    shape(o[0], path + "[0]", depth + 1)
+                print("  JSON shape:")
+                shape(d)
+              except Exception as e:
+                print("  could not read it as JSON:", e)
+            else:
+              txt = re.sub(r"<[^>]+>", " ", body)
+              txt = " ".join(txt.split())
+              print("  first 500 characters of readable text:")
+              print("   ", txt[:500])
 
-      - name: Write the Premier League summary
-        run: python make_summary.py
-
-      # Everything that records what has been SENT is written by the steps
-      # above, so the commit has to come after them. With it before, the
-      # stamps were thrown away at the end of every run and both games
-      # emailed again the next day.
-      # One `git add` listing several files is ALL OR NOTHING: if any one of
-      # them does not exist, git stages none of them and the whole commit is
-      # silently skipped. UEFA_last_emailed.txt does not exist until the first
-      # Champions League email goes out, so every run was quietly saving
-      # nothing - which is why the same matchweek was emailed day after day.
-      # Adding them one at a time means a missing file costs only itself.
-      - name: Save the results and what has been emailed
-        run: |
-          git config user.name "table-bot"
-          git config user.email "table-bot@users.noreply.github.com"
-          for f in tables PL_last_emailed.txt UEFA_state.json \
-                   UEFA_scorers.json UEFA_kickoffs.json \
-                   UEFA_last_emailed.txt UEFA_last_reminded.txt; do
-            git add "$f" 2>/dev/null || echo "  (no $f this run - that is fine)"
-          done
-          if git diff --cached --quiet; then
-            echo "Nothing changed, nothing to commit."
-          else
-            echo "Committing:"
-            git diff --cached --name-only | sed 's/^/  /'
-            git commit -q -m "Results for $(date -u +%F)"
-            git push
-          fi
-
-      - name: Upload Jim's page
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-      # ---------------- emails ----------------
-      # ONE email per completed matchweek, to both players. The table is
-      # inside it, so there is no separate paste-ready email any more.
-      - name: Email the Premier League matchweek
-        if: hashFiles('summary.txt') != ''
-        env:
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
-        run: python send_summary.py summary.txt "Premier League - Jim v Brien, Matchweek update"
-
-      # Three days before a matchday locks, one reminder to both players
-      # with the cut-off in UTC and in Pacific time.
-      - name: Email the picks reminder
-        if: hashFiles('UEFA_live.flag') != '' && hashFiles('UEFA_reminder.txt') != ''
-        env:
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
-        run: python send_summary.py UEFA_reminder.txt "Champions League - picks close in 3 days"
-
-      - name: Email the Champions League summary
-        if: hashFiles('UEFA_live.flag') != '' && hashFiles('UEFA_email.txt') != ''
-        env:
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
-        run: python send_summary.py UEFA_email.txt "Champions League - Brien v Jim update"
-
-      - name: Switch off after the final matchweek
-        if: hashFiles('season_over.flag') != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow disable "Weekly Premier League table" --repo "$GITHUB_REPOSITORY"
-
-  deploy:
-    needs: fetch
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          print()
+          print("Done. Nothing was changed and nobody was emailed.")
+          PY
