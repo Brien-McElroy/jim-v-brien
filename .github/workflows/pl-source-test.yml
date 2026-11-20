@@ -80,14 +80,14 @@ jobs:
             seasons = ss.get("content") or ss
             pick = None
             for c in seasons[:8]:
-              print("   id=%-6s  %s" % (c.get("id"), c.get("label")))
+              print("   id=%-6s  %s" % (int(c.get("id")), c.get("label")))
               if "2026/27" in str(c.get("label")): pick = c
             if pick is None: pick = seasons[0]
             print()
-            print("   USING -> id=%s  %s" % (pick.get("id"), pick.get("label")))
+            print("   USING -> id=%s  %s" % (int(pick.get("id")), pick.get("label")))
 
             print(); print("=" * 68); print("THE TABLE, as the job would save it"); print("=" * 68)
-            d = get(base + "/standings?compSeasons=%s&altIds=true&detail=2" % pick.get("id"))
+            d = get(base + "/standings?compSeasons=%d&altIds=true&detail=2" % int(pick.get("id")))
             t = d["tables"][0]
             print("   gameWeek reported:", t.get("gameWeek"))
             print()
