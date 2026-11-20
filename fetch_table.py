@@ -224,6 +224,24 @@ def get_rows():
     return parse(fetch_text())
 
 
+def beat(dry):
+    """Record that the table was read today, whatever it said.
+
+    This is the heartbeat check_health.py watches. It is deliberately NOT the
+    date of the newest saved table: the league has two-week international
+    breaks, so a table that has not moved is normal and would cry wolf. A
+    reader that has not managed to READ for days is not normal, and that is
+    the thing nobody would otherwise notice.
+    """
+    if dry:
+        return
+    try:
+        with open("PL_last_read.txt", "w", encoding="utf-8") as f:
+            f.write(datetime.date.today().isoformat())
+    except Exception as e:                       # never let the heartbeat break the run
+        print("(could not write the heartbeat file: %s)" % e)
+
+
 if __name__ == "__main__":
     import glob, os
     dry = "--dry-run" in sys.argv
@@ -232,11 +250,14 @@ if __name__ == "__main__":
         rows = parse(open(args[0], encoding="utf-8").read()) if args else get_rows()
     except MidRound as e:
         # A matchweek is still being played. This is normal, so finish quietly (no red failure, no email).
+        # The table WAS read, so this still counts as a heartbeat.
+        beat(dry)
         print("Matchweek still in progress, nothing to do:", e)
         if not dry and os.path.exists("email.txt"): os.remove("email.txt")
         sys.exit(0)
     except Exception as e:
         print("FAILED:", e); sys.exit(1)
+    beat(dry)
     today = datetime.date.today().isoformat()
     played = rows[0][2]
 

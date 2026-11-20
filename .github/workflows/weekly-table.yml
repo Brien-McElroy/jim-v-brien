@@ -100,6 +100,16 @@ jobs:
           echo "Everything below still runs, including the Champions League."
           echo "Jim's page keeps showing the last table that was read."
 
+      # Making a failure cheap also makes it quiet: the step above can go amber
+      # for a fortnight and the only sign is a warning in a log nobody opens.
+      # This watches the date in PL_last_read.txt and speaks up if the table
+      # has not been READ for three days. It stays silent through an
+      # international break, because a table that has not moved is normal and
+      # a reader that has not worked is not. Writes nothing when all is well.
+      - name: Check the job is still healthy
+        continue-on-error: true
+        run: python check_health.py
+
       # ---------------- Champions League ----------------
       # Reads UEFA's feed directly, no browser. Finishes quietly unless the
       # next unscored matchday is complete.
@@ -133,7 +143,8 @@ jobs:
           git config user.email "table-bot@users.noreply.github.com"
           for f in tables PL_last_emailed.txt UEFA_state.json \
                    UEFA_scorers.json UEFA_kickoffs.json \
-                   UEFA_last_emailed.txt UEFA_last_reminded.txt; do
+                   UEFA_last_emailed.txt UEFA_last_reminded.txt \
+                   PL_last_read.txt health_last_warned.txt; do
             git add "$f" 2>/dev/null || echo "  (no $f this run - that is fine)"
           done
           if git diff --cached --quiet; then
@@ -173,7 +184,7 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
-        run: python send_summary.py UEFA_reminder.txt "Champions League - picks close in 3 days"
+        run: python send_summary.py UEFA_reminder.txt "Champions League - picks close soon"
 
       - name: Email the Champions League summary
         if: hashFiles('UEFA_live.flag') != '' && hashFiles('UEFA_email.txt') != ''
@@ -184,6 +195,21 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_BOTH: ${{ secrets.MAIL_BOTH }}
         run: python send_summary.py UEFA_email.txt "Champions League - Brien v Jim update"
+
+      # Only ever written when the table has gone unread for three days.
+      # Goes to MAIL_TO if that secret exists so Jim is not sent maintenance
+      # mail; falls back to MAIL_BOTH if it does not. The message is written
+      # in plain English either way.
+      - name: Say if something has quietly stopped working
+        if: hashFiles('health_warning.txt') != ''
+        continue-on-error: true
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_BOTH: ${{ secrets.MAIL_TO || secrets.MAIL_BOTH }}
+        run: python send_summary.py health_warning.txt "Jim v Brien - the table has stopped updating"
 
       - name: Switch off after the final matchweek
         if: hashFiles('season_over.flag') != ''
