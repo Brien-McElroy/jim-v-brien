@@ -16,7 +16,16 @@ name: Weekly Premier League table
 
 on:
   schedule:
-    - cron: "0 14 * * *"
+    # Four times a day, not once. GitHub runs scheduled jobs when it has room,
+    # not when you ask: through November 2026 this fired between 50 minutes and
+    # 9 hours late, and GitHub drops runs outright when it is busy. Once a day
+    # meant a dropped run cost a whole day, and could have cost a picks
+    # reminder. Running four times a day costs nothing on a public repo and is
+    # safe to repeat - every step below is guarded. The table only saves when
+    # all 20 clubs have played one more game than the last saved table; the
+    # Champions League only acts on a completed, unscored matchday; and each of
+    # the three emails has its own stamp file, so none of them can go twice.
+    - cron: "0 2,8,14,20 * * *"
   workflow_dispatch:
 
 permissions:
