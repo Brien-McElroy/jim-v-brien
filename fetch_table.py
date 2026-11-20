@@ -1,9 +1,35 @@
-"""Fetch the official Premier League table, save it as tables/<date>.csv and
-write email.txt (plain text, ready to paste into the Jim v Brien page)."""
-import csv, datetime, re, sys
-from playwright.sync_api import sync_playwright
+"""Fetch the Premier League table, save it as tables/MW<nn>_<date>.csv and
+write email.txt.
+
+HOW THIS READS THE TABLE, and why it changed on 19 Nov 2026
+-----------------------------------------------------------
+It used to drive a real browser (Playwright) against premierleague.com,
+because that page builds its table in JavaScript and the raw HTML holds no
+club names at all. That worked, but it broke twice in nine days:
+
+  11 Nov - installing the browser needed apt, apt could not reach Ubuntu's
+           servers, and the whole job died.
+  19 Nov - premierleague.com answered the runner with "403 Request blocked"
+           (CloudFront) three times and the job died again, taking the
+           Champions League half down with it.
+
+Tested from a GitHub runner on 19 Nov, the same table is available as plain
+JSON from ESPN, with no browser at all - and its numbers matched the saved
+Matchweek 10 table exactly, all twenty rows, positions and points. So JSON
+is now the normal route and the browser is only a fallback.
+
+The browser code below is untouched and still correct. If ESPN ever stops
+answering, or hands back something that fails the checks, this falls back to
+the old method automatically. Losing one does not lose the table.
+
+Run with --dry-run to print what it WOULD save, and compare it against the
+newest table already saved, without writing anything.
+"""
+import csv, datetime, json, re, sys, urllib.request, urllib.error
 
 URL = "https://www.premierleague.com/en/tables/premier-league/2026-27"
+ESPN = "https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings"
+
 TEAMS = ["Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton & Hove Albion",
          "Chelsea", "Coventry City", "Crystal Palace", "Everton", "Fulham", "Hull City",
          "Ipswich Town", "Leeds United", "Liverpool", "Manchester City", "Manchester United",
@@ -13,13 +39,82 @@ ALIASES = {"Brighton": "Brighton & Hove Albion", "Brighton and Hove Albion": "Br
            "Man City": "Manchester City", "Man Utd": "Manchester United", "Man United": "Manchester United",
            "Spurs": "Tottenham Hotspur", "Tottenham": "Tottenham Hotspur", "Newcastle": "Newcastle United",
            "Nott'm Forest": "Nottingham Forest", "Forest": "Nottingham Forest", "Leeds": "Leeds United",
-           "Hull": "Hull City", "Ipswich": "Ipswich Town", "Coventry": "Coventry City"}
+           "Hull": "Hull City", "Ipswich": "Ipswich Town", "Coventry": "Coventry City",
+           # ESPN's own spellings. Every one of these was checked against the
+           # saved Matchweek 10 table on 19 Nov 2026; only Bournemouth differs.
+           "AFC Bournemouth": "Bournemouth",
+           "Wolverhampton Wanderers": "Wolverhampton Wanderers",
+           "West Ham United": "West Ham United"}
 NAMES = {t.lower(): t for t in TEAMS}
 NAMES.update({k.lower(): v for k, v in ALIASES.items()})
 
 
 class MidRound(ValueError):
     """Not all teams have played the same number of games yet."""
+
+
+def check_rows(rows):
+    """Shared sanity checks, whichever source the rows came from.
+
+    rows is [(team, played, won, drawn, lost, gf, ga, points)].
+    Returns [(position, team, played, points)] in table order.
+    Anything that does not add up raises, so a changed feed or layout fails
+    loudly instead of quietly saving a wrong table into the game.
+    """
+    if len(rows) != 20:
+        raise ValueError("Read %d of 20 teams" % len(rows))
+    if len({r[0] for r in rows}) != 20:
+        raise ValueError("The same club appeared twice")
+    for team, pl, w, d, l, gf, ga, pts in rows:
+        if pl != w + d + l:
+            raise ValueError("%s: played %d but W+D+L is %d" % (team, pl, w + d + l))
+        if pts != 3 * w + d:
+            raise ValueError("%s: points %d but 3W+D is %d" % (team, pts, 3 * w + d))
+    if len({r[1] for r in rows}) != 1:
+        raise MidRound("Teams have played different numbers of games; table may be mid-round")
+
+    # Official order: points, then goal difference, then goals scored.
+    ordered = sorted(rows, key=lambda r: (-r[7], -(r[5] - r[6]), -r[5], r[0]))
+    return [(n + 1, r[0], r[1], r[7]) for n, r in enumerate(ordered)]
+
+
+def fetch_espn():
+    """Read the table from ESPN's standings feed. No browser needed."""
+    req = urllib.request.Request(ESPN, headers={
+        "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"),
+        "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=45) as r:
+        data = json.loads(r.read())
+
+    # Make sure this is the right season before trusting a single number.
+    season = (data.get("season") or {}).get("displayName", "")
+    if "2026-27" not in season and "2026/27" not in season:
+        raise ValueError("ESPN is serving season %r, not 2026-27" % season)
+
+    entries = data["children"][0]["standings"]["entries"]
+    rows = []
+    for e in entries:
+        raw = e["team"].get("displayName") or e["team"].get("name") or ""
+        team = NAMES.get(raw.lower())
+        if not team:
+            # Never guess a club name - the game is scored on exact positions,
+            # so an unrecognised name has to stop the run, not be approximated.
+            raise ValueError("ESPN club name not recognised: %r. Add it to ALIASES." % raw)
+        s = {x.get("name"): x for x in e["stats"]}
+
+        def num(key):
+            v = s.get(key)
+            if v is None:
+                raise ValueError("%s: ESPN did not supply %s" % (team, key))
+            n = v.get("value")
+            if n is None:
+                n = v.get("displayValue")
+            return int(float(n))
+
+        rows.append((team, num("gamesPlayed"), num("wins"), num("ties"), num("losses"),
+                     num("pointsFor"), num("pointsAgainst"), num("points")))
+    return rows
 
 
 def parse(text):
@@ -62,6 +157,7 @@ def fetch_text():
     """Load the page, retrying up to 3 times. We wait for the table itself to appear
     rather than for the whole page to go quiet, because the site keeps loading ads."""
     import time
+    from playwright.sync_api import sync_playwright
     last = None
     for attempt in range(3):
         try:
@@ -110,23 +206,68 @@ def fetch_text():
     raise last
 
 
+def get_rows():
+    """ESPN first, the browser second. Returns [(pos, team, played, pts)].
+
+    A MidRound from either source means the matchweek is still being played;
+    that is normal and must not be retried against the other source.
+    """
+    try:
+        print("Reading the table from ESPN...")
+        rows = check_rows(fetch_espn())
+        print("ESPN gave a complete, consistent table.")
+        return rows
+    except MidRound:
+        raise
+    except Exception as e:
+        print("ESPN did not work out (%s). Falling back to the browser." % e)
+    return parse(fetch_text())
+
+
 if __name__ == "__main__":
     import glob, os
+    dry = "--dry-run" in sys.argv
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
     try:
-        rows = parse(open(sys.argv[1], encoding="utf-8").read() if len(sys.argv) > 1 else fetch_text())
+        rows = parse(open(args[0], encoding="utf-8").read()) if args else get_rows()
     except MidRound as e:
         # A matchweek is still being played. This is normal, so finish quietly (no red failure, no email).
         print("Matchweek still in progress, nothing to do:", e)
-        if os.path.exists("email.txt"): os.remove("email.txt")
+        if not dry and os.path.exists("email.txt"): os.remove("email.txt")
         sys.exit(0)
     except Exception as e:
         print("FAILED:", e); sys.exit(1)
     today = datetime.date.today().isoformat()
     played = rows[0][2]
+
+    if dry:
+        print("\n--- what would be saved (nothing was written) ---")
+        print("position,team,played,points")
+        for r in rows:
+            print("%d,%s,%d,%d" % r)
+        newest = sorted(glob.glob("tables/*.csv"))[-1] if glob.glob("tables/*.csv") else None
+        if newest:
+            old = list(csv.DictReader(open(newest, encoding="utf-8")))
+            print("\n--- compared with %s ---" % newest)
+            if int(old[0]["played"]) != played:
+                print("Different matchweek (saved %s played, feed says %d), so no row-by-row check."
+                      % (old[0]["played"], played))
+            else:
+                bad = [(o["position"], o["team"], o["points"], r)
+                       for o, r in zip(old, rows)
+                       if (int(o["position"]), o["team"], int(o["points"])) != (r[0], r[1], r[3])]
+                if bad:
+                    print("MISMATCH on %d row(s):" % len(bad))
+                    for o_pos, o_team, o_pts, r in bad:
+                        print("   saved: %s %s %s   feed: %d %s %d" % (o_pos, o_team, o_pts, r[0], r[1], r[3]))
+                else:
+                    print("IDENTICAL on all 20 rows - position, club and points.")
+        sys.exit(0)
+
     os.makedirs("tables", exist_ok=True)
     # Run every day, but only act when ALL 20 teams have played one more game than
     # the last saved table. That is exactly "after Matchweek X is complete and
-    # before Matchweek X+1 has started". Mid-round tables were rejected in parse().
+    # before Matchweek X+1 has started". Mid-round tables were rejected above.
     have = set()
     for fn in glob.glob("tables/*.csv"):
         try:
