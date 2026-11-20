@@ -1,1 +1,127 @@
+# A one-off test. It changes nothing and emails nobody.
+#
+# premierleague.com started answering GitHub's servers with
+# "403 Request blocked" (CloudFront), so the table cannot be read the way it
+# has been. This tries five other places the same table lives and prints what
+# each one says, so we can see which ones GitHub is allowed to read.
+#
+# Run it from the Actions tab: pick "Test where the table can be read",
+# press "Run workflow", leave the box on "all", press the green button.
+# Then open the run and read the "Try each source" step.
+name: Test where the table can be read
 
+on:
+  workflow_dispatch:
+    inputs:
+      which:
+        description: Which source to try
+        type: choice
+        default: all
+        options:
+          - all
+          - premierleague
+          - pulselive
+          - espn
+          - bbc
+          - fbref
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Try each source
+        run: |
+          python - <<'PY'
+          print("BUILD 2026-11-19a")
+          import urllib.request, urllib.error, json, re
+
+          WHICH = "${{ inputs.which }}"
+
+          SOURCES = [
+            ("premierleague", "https://www.premierleague.com/tables"),
+            ("pulselive",     "https://footballapi.pulselive.com/football/standings"
+                              "?compSeasons=777&altIds=true&detail=2&FOOTBALL_COMPETITION=1"),
+            ("espn",          "https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings"),
+            ("bbc",           "https://www.bbc.com/sport/football/premier-league/table"),
+            ("fbref",         "https://fbref.com/en/comps/9/Premier-League-Stats"),
+          ]
+
+          HEAD = {
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                           "Chrome/131.0.0.0 Safari/537.36"),
+            "Accept": "*/*",
+            "Accept-Language": "en-GB,en;q=0.9",
+          }
+
+          def looks_like_a_table(body):
+            """Say whether the 20 clubs and some numbers are actually in there."""
+            clubs = ["Arsenal", "Liverpool", "Chelsea", "Everton",
+                     "Newcastle", "Tottenham", "Brentford", "Fulham"]
+            found = [c for c in clubs if c in body]
+            return found
+
+          for name, url in SOURCES:
+            if WHICH != "all" and WHICH != name:
+              continue
+            print()
+            print("=" * 68)
+            print(name.upper(), "->", url[:90])
+            print("=" * 68)
+            req = urllib.request.Request(url, headers=dict(HEAD))
+            if name == "pulselive":
+              req.add_header("Origin", "https://www.premierleague.com")
+              req.add_header("Referer", "https://www.premierleague.com/")
+            try:
+              with urllib.request.urlopen(req, timeout=45) as r:
+                code = r.status
+                ctype = r.headers.get("Content-Type", "?")
+                raw = r.read(400000)
+            except urllib.error.HTTPError as e:
+              body = ""
+              try:
+                body = e.read(600).decode("utf-8", "replace")
+              except Exception:
+                pass
+              print("  BLOCKED. HTTP", e.code, e.reason)
+              print("  the site said:", " ".join(body.split())[:300])
+              continue
+            except Exception as e:
+              print("  FAILED to connect:", type(e).__name__, e)
+              continue
+
+            body = raw.decode("utf-8", "replace")
+            print("  OK. HTTP", code, "|", ctype, "|", len(raw), "bytes")
+
+            clubs = looks_like_a_table(body)
+            print("  clubs visible in the response:", ", ".join(clubs) if clubs else "NONE")
+
+            if "json" in ctype or body.lstrip()[:1] in "{[":
+              try:
+                d = json.loads(body)
+                def shape(o, path="", depth=0):
+                  if depth > 3: return
+                  if isinstance(o, dict):
+                    for k in list(o)[:12]:
+                      print("    ", path + "." + k, "=", type(o[k]).__name__,
+                            ("(%d)" % len(o[k])) if isinstance(o[k], (list, dict)) else "")
+                      shape(o[k], path + "." + k, depth + 1)
+                  elif isinstance(o, list) and o:
+                    shape(o[0], path + "[0]", depth + 1)
+                print("  JSON shape:")
+                shape(d)
+              except Exception as e:
+                print("  could not read it as JSON:", e)
+            else:
+              txt = re.sub(r"<[^>]+>", " ", body)
+              txt = " ".join(txt.split())
+              print("  first 500 characters of readable text:")
+              print("   ", txt[:500])
+
+          print()
+          print("Done. Nothing was changed and nobody was emailed.")
+          PY
